@@ -31,3 +31,8 @@ _Avoid_: Ignored file, omitted binary, filtered asset
 **Delivery Target**:
 The destination to which the final Bundle is delivered (System Clipboard, Terminal stdout, or File on disk).
 _Avoid_: Output mode, export sink, print channel
+
+**Unpack**:
+The reverse operation that reads a Bundle and reconstructs the original Skill directory and inlined files on disk.
+_Avoid_: Decompress, extract, restore, explode
+

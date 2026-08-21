@@ -131,6 +131,8 @@ def build_bundle_document(
     uri = skill_md_path.resolve().as_uri()
     tree = directory_tree(skill_dir)
 
+    skill_text = skill_md_path.read_text(encoding="utf-8")
+
     lines = [
         f"**Title:** One Page Version of {title}",
         "",
@@ -150,7 +152,7 @@ def build_bundle_document(
         "",
         "## SKILL.md",
         "",
-        body.rstrip("\n"),
+        skill_text.rstrip("\n"),
         "",
     ]
 
