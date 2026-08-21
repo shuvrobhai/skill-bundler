@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skill-bundler"
+version = "0.1.0"
+description = "Bundle an AI agent skill directory into one self-contained Markdown document."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Developer" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = []
+
+[project.scripts]
+skill-bundler = "skill_bundler.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
