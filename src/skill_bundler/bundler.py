@@ -108,15 +108,7 @@ def directory_tree(skill_dir: Path) -> str:
 
 def _code_fence(content: str, lang: str) -> Tuple[str, str]:
     """Return (opening_fence, closing_fence) avoiding collision with backticks in content."""
-    max_run = 0
-    current_run = 0
-    for ch in content:
-        if ch == "`":
-            current_run += 1
-            max_run = max(max_run, current_run)
-        else:
-            current_run = 0
-
+    max_run = max((len(match) for match in re.findall(r"`+", content)), default=0)
     backtick_fence = "`" * max(3, max_run + 1)
     opening = f"{backtick_fence}{lang}" if lang else backtick_fence
     return opening, backtick_fence
@@ -130,7 +122,6 @@ def build_bundle_document(
     title = name or skill_dir.name
     uri = skill_md_path.resolve().as_uri()
     tree = directory_tree(skill_dir)
-
     skill_text = skill_md_path.read_text(encoding="utf-8")
 
     lines = [
@@ -163,21 +154,15 @@ def build_bundle_document(
         relative_path = path.relative_to(skill_dir).as_posix()
         file_bytes = path.read_bytes()
 
-        if b"\x00" in file_bytes[:BINARY_PROBE_SIZE]:
-            skipped_files.append(relative_path)
-            lines.extend([
-                f"<!-- SOURCE: {relative_path} -->",
-                "",
-                f"## {relative_path}",
-                "",
-                "_binary file — not inlined_",
-                "",
-            ])
-            continue
+        is_binary = b"\x00" in file_bytes[:BINARY_PROBE_SIZE]
+        content = None
+        if not is_binary:
+            try:
+                content = file_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                pass
 
-        try:
-            content = file_bytes.decode("utf-8")
-        except UnicodeDecodeError:
+        if content is None:
             skipped_files.append(relative_path)
             lines.extend([
                 f"<!-- SOURCE: {relative_path} -->",

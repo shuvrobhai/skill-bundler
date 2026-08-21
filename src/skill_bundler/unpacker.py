@@ -62,23 +62,11 @@ def parse_bundle(bundle_text: str) -> Tuple[Dict[str, str], List[str]]:
             files[relative_path] = content_body
             continue
 
-        # Extract content inside code fences
-        # Fences match 3 or more backticks
+        # Extract content inside code fences (3 or more backticks)
         fence_match = re.match(
-            r"^(`{3,})[^\n]*\n(.*?)\n\1\s*$", content_body, re.DOTALL
+            r"^(`{3,})[^\n]*\n?(.*?)\n?\1\s*$", content_body, re.DOTALL
         )
-        if fence_match:
-            extracted_content = fence_match.group(2)
-            files[relative_path] = extracted_content
-        else:
-            # Handle single-line or empty fenced blocks
-            single_line_fence = re.match(
-                r"^(`{3,})[^\n]*\n?(.*?)\n?\1\s*$", content_body, re.DOTALL
-            )
-            if single_line_fence:
-                files[relative_path] = single_line_fence.group(2)
-            else:
-                files[relative_path] = content_body
+        files[relative_path] = fence_match.group(2) if fence_match else content_body
 
     if "SKILL.md" not in files:
         raise UnpackError("Invalid bundle: SKILL.md content was not extracted.")
