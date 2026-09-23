@@ -2,15 +2,16 @@
 
 ## Overview
 
-This is the whole tool. It turns a skill directory into one Markdown bundle, and turns a bundle back into files on disk. `cli.py` only wires `argparse` to these modules, so all the real logic sits in `bundler.py` and `unpacker.py`. Nothing here imports outside the standard library.
+This is the whole tool. It turns a skill directory into one Markdown bundle, and turns a bundle back into files on disk. `cli.py` only wires `argparse` to these modules, so all the real logic sits in `bundler.py`, `unpacker.py`, and `indexer.py`. Nothing here imports outside the standard library.
 
 ## Key files
 
 | File | Owns |
 |---|---|
-| `bundler.py` | Pack side: SKILL.md frontmatter parsing, the Structure Map tree, inlining text files, `validate_output` |
+| `bundler.py` | Pack side: SKILL.md frontmatter parsing, the Structure Map tree, inlining text files |
 | `unpacker.py` | Unpack side: bundle parsing, path safety, the collision guard, writing files to disk |
-| `cli.py` | The `argparse` parser, the `pack` and `unpack` handlers, and every exit |
+| `indexer.py` | Index side: skill discovery, the Skill Index table, the Collection Bundle text |
+| `cli.py` | The `argparse` parser, the `pack`, `unpack`, and `index` handlers, and every exit |
 | `clipboard.py` | The OS clipboard adapter: `pbcopy`/`pbpaste` on macOS, `wl-copy`/`xclip`/`xsel` on Linux |
 | `__main__.py` | Module execution entry point for python -m skill_bundler |
 | `__init__.py` | The public surface, re-exported through `__all__` |
@@ -18,7 +19,7 @@ This is the whole tool. It turns a skill directory into one Markdown bundle, and
 ## Conventions
 
 - Standard library only. If you are reaching for a package, reach for the standard library first.
-- Domain modules never call `sys.exit`. They raise `UnpackError` or return values, and `cli.py` decides how to fail.
+- Domain modules never call `sys.exit`. They raise `UnpackError` or `ValueError` or return values, and `cli.py` decides how to fail.
 - Private helpers take a leading underscore, as in `_tree_body`, `_code_fence`, `_get_clipboard_command`.
 - When you add a module level function other code should use, add it to `__all__` in `__init__.py` too.
 
@@ -30,9 +31,10 @@ The bundle format is a contract between the two modules. `bundler.py` writes it 
 - `<!-- SOURCE: <relative_path> -->` opens every file section. `<!-- SOURCE: SKILL.md -->` is the marker that proves a bundle is genuine, and unpacking refuses a bundle without it.
 - `_binary file — not inlined_` marks a skipped file. The unpacker notes it and writes nothing.
 - Code fences widen to `max(3, longest backtick run + 1)` so inlined content that contains backticks survives the trip.
-- `validate_output` calls `sys.exit` when a check fails. That makes it CLI only, so never call it from library code or from a test.
 
 `tests/test_unpacker.py::test_round_trip_pack_and_unpack` is the safety net for all of the above. Run it after touching either module. When the two sides drift, that test is what catches it.
+
+A Collection Bundle holds `SKILL.md` bodies only, and it never contains the exact `<!-- SOURCE: SKILL.md -->` marker, so `unpack` refuses it as input. A `SKILL.md` sitting directly in a Collection is never included, which keeps that marker out.
 
 Tests import `skill_bundler`, so run `pip install -e .` first, or prefix the command with `PYTHONPATH=src`.
 

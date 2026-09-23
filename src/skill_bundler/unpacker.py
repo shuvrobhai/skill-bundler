@@ -2,7 +2,6 @@
 
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class UnpackError(Exception):
@@ -21,7 +20,7 @@ def extract_skill_title(bundle_text: str) -> str:
     return "unpacked-skill"
 
 
-def parse_bundle(bundle_text: str) -> Tuple[Dict[str, str], List[str]]:
+def parse_bundle(bundle_text: str) -> tuple[dict[str, str], list[str]]:
     """
     Parse a bundle document into extracted text files and skipped binary files.
     
@@ -43,8 +42,8 @@ def parse_bundle(bundle_text: str) -> Tuple[Dict[str, str], List[str]]:
     if len(parts) < 3:
         raise UnpackError("Invalid bundle: no file sections found.")
 
-    files: Dict[str, str] = {}
-    skipped_files: List[str] = []
+    files: dict[str, str] = {}
+    skipped_files: list[str] = []
 
     for i in range(1, len(parts), 2):
         relative_path = parts[i].strip()
@@ -92,7 +91,7 @@ def unpack_bundle(
     target_dir: Path,
     should_overwrite: bool = False,
     force: bool = False,
-) -> Tuple[int, List[str]]:
+) -> tuple[int, list[str]]:
     """
     Unpack bundle files into target_dir on disk.
     
@@ -119,11 +118,11 @@ def unpack_bundle(
             )
 
     # 2. Collision check
-    existing_conflicts = []
-    for relative_path in files.keys():
-        dest_path = target_dir / relative_path
-        if dest_path.exists():
-            existing_conflicts.append(relative_path)
+    existing_conflicts = [
+        relative_path
+        for relative_path in files.keys()
+        if (target_dir / relative_path).exists()
+    ]
 
     if existing_conflicts and not should_overwrite:
         conflict_list = "\n".join(f"  - {p}" for p in existing_conflicts)

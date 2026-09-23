@@ -1,9 +1,7 @@
 """Core domain logic for bundling a skill directory into a Markdown document."""
 
 import re
-import sys
 from pathlib import Path
-from typing import List, Tuple
 
 EXTENSION_LANGUAGE_TAGS = {
     ".py": "python",
@@ -24,7 +22,14 @@ EXTENSION_LANGUAGE_TAGS = {
 BINARY_PROBE_SIZE = 8192
 
 
-def parse_skill(skill_md_path: Path) -> Tuple[str, str, str]:
+def is_excluded_path(path: Path) -> bool:
+    """True when any part is hidden or a cache dir."""
+    return any(part.startswith(".") for part in path.parts) or (
+        "__pycache__" in path.parts
+    )
+
+
+def parse_skill(skill_md_path: Path) -> tuple[str, str, str]:
     """Return (name, description, body) from SKILL.md."""
     text = skill_md_path.read_text(encoding="utf-8")
     name = ""
@@ -46,7 +51,7 @@ def parse_skill(skill_md_path: Path) -> Tuple[str, str, str]:
     return name, description, body
 
 
-def collect_skill_files(skill_dir: Path) -> List[Path]:
+def collect_skill_files(skill_dir: Path) -> list[Path]:
     """Return all non-hidden, non-symlink files except SKILL.md."""
     files = []
     for path in sorted(skill_dir.rglob("*")):
@@ -58,9 +63,7 @@ def collect_skill_files(skill_dir: Path) -> List[Path]:
             continue
 
         relative_path = path.relative_to(skill_dir)
-        if any(part.startswith(".") for part in relative_path.parts):
-            continue
-        if "__pycache__" in relative_path.parts:
+        if is_excluded_path(relative_path):
             continue
 
         files.append(path)
@@ -77,14 +80,12 @@ def _structure_map_sort_key(path: Path):
     return (1, 0, path.name.lower())
 
 
-def _render_structure_map_body(directory: Path, prefix: str, lines: List[str]) -> None:
+def _render_structure_map_body(directory: Path, prefix: str, lines: list[str]) -> None:
     entries = sorted(
         [
             p
             for p in directory.iterdir()
-            if not p.name.startswith(".")
-            and p.name != "__pycache__"
-            and not p.is_symlink()
+            if not is_excluded_path(Path(p.name)) and not p.is_symlink()
         ],
         key=_structure_map_sort_key,
     )
@@ -110,7 +111,7 @@ def build_structure_map(skill_dir: Path) -> str:
 directory_tree = build_structure_map
 
 
-def _build_code_fence(content: str, lang: str) -> Tuple[str, str]:
+def _build_code_fence(content: str, lang: str) -> tuple[str, str]:
     """Return (opening_fence, closing_fence) avoiding collision with backticks in content."""
     max_run = max((len(match) for match in re.findall(r"`+", content)), default=0)
     backtick_fence = "`" * max(3, max_run + 1)
@@ -119,8 +120,8 @@ def _build_code_fence(content: str, lang: str) -> Tuple[str, str]:
 
 
 def build_bundle_document(
-    skill_dir: Path, skill_md_path: Path, files: List[Path]
-) -> Tuple[str, int, List[str]]:
+    skill_dir: Path, skill_md_path: Path, files: list[Path]
+) -> tuple[str, int, list[str]]:
     """Build one Markdown document with metadata, structure map, and inlined files."""
     name, description, body = parse_skill(skill_md_path)
     title = name or skill_dir.name
@@ -152,7 +153,7 @@ def build_bundle_document(
     ]
 
     inlined_count = 0
-    skipped_files: List[str] = []
+    skipped_files: list[str] = []
 
     for path in files:
         relative_path = path.relative_to(skill_dir).as_posix()
@@ -194,19 +195,3 @@ def build_bundle_document(
         inlined_count += 1
 
     return "\n".join(lines), inlined_count, skipped_files
-
-
-def validate_output(
-    output_text: str, skill_body: str, non_skill_file_count: int
-) -> None:
-    """Basic runnable check that the output contains the expected pieces."""
-    if "Skill's Structure Map" not in output_text:
-        sys.exit("Validation failed: structure map is missing.")
-
-    if skill_body and skill_body.strip()[:200] not in output_text:
-        sys.exit("Validation failed: SKILL.md body is missing from output.")
-
-    if non_skill_file_count > 0:
-        expected_comments = non_skill_file_count + 1  # SKILL.md + inlined + skipped files
-        if output_text.count("<!-- SOURCE:") < expected_comments:
-            sys.exit("Validation failed: not all source separators made it into output.")

@@ -53,6 +53,27 @@ skill-bundler unpack path/to/bundle.md -d ./my-skill
 skill-bundler unpack path/to/bundle.md -d ./my-skill --force
 ```
 
+### 3. Surveying a Collection (`index`)
+
+```bash
+# Copy the survey to clipboard (default)
+skill-bundler index /path/to/collection
+
+# Print to terminal (stdout)
+skill-bundler index /path/to/collection -t
+
+# Save as <collection>.one-page.md next to the collection
+skill-bundler index /path/to/collection -o
+
+# Include skills nested below immediate children
+skill-bundler index /path/to/collection -r -t
+```
+
+Point `index` at a folder of skills to get one survey document. It lists every
+skill in a table, then includes each `SKILL.md` body in full. Only `SKILL.md`
+files are included, so use `pack` when you want one skill with all of its
+supporting files. A survey document is not a valid `unpack` input.
+
 ## Flags Reference
 
 ### `pack` Flags
@@ -71,6 +92,15 @@ skill-bundler unpack path/to/bundle.md -d ./my-skill --force
 | `-d`, `--destination` | Target directory for unpacked skill (defaults to `./<skill-title>/`) |
 | `-f`, `--force` | Overwrite existing files in destination directory |
 
+### `index` Flags
+
+| Flag | Description |
+|------|-------------|
+| `-r`, `--recursive` | Include skills nested below immediate children |
+| `-c`, `--clipboard` | Copy survey to clipboard (default) |
+| `-t`, `--terminal` | Print survey to terminal (`stdout`) |
+| `-o`, `--output` | Write `<collection>.one-page.md` file next to collection |
+
 ## Project Structure
 
 ```
@@ -88,9 +118,11 @@ skill-bundler/
 │       ├── unpacker.py          # Unpack logic (parser, path security, disk writer)
 │       ├── cli.py               # Subcommand CLI parser & dispatcher
 │       └── clipboard.py         # OS clipboard adapter (pbcopy/pbpaste, wl-copy/paste, xclip)
+│       └── indexer.py           # Index logic (survey a collection of skills)
 └── tests/                        # Automated test suite
     ├── test_bundler.py           # Unit tests for bundling & filtering
-    └── test_unpacker.py          # Unit tests for round-trip unpacking & security guards
+    ├── test_unpacker.py          # Unit tests for round-trip unpacking & security guards
+    └── test_indexer.py           # Unit tests for collection survey & discovery
 ```
 
 ## Security & Safety Guardrails

@@ -10,7 +10,6 @@ from skill_bundler.bundler import (
     collect_skill_files,
     directory_tree,
     parse_skill,
-    validate_output,
 )
 
 

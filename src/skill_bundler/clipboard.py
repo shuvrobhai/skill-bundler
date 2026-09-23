@@ -5,10 +5,7 @@ import subprocess
 import sys
 
 
-from typing import List
-
-
-def _get_clipboard_command(action: str) -> List[str]:
+def _get_clipboard_command(action: str) -> list[str]:
     """Return command list for 'copy' or 'paste', or exit with error."""
     if sys.platform == "darwin":
         return ["pbcopy"] if action == "copy" else ["pbpaste"]

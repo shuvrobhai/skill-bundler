@@ -7,23 +7,36 @@
 - **Key dependencies**: none to run; `setuptools >= 61` to build
 - **Package manager**: pip, `src/` layout, installed editable
 
-## Build approach
-
-<TBD, set by /scope>
-
 ## Commands
 
 ```bash
-# Install (editable, provides the skill-bundler command)
+# Install once (editable, provides the skill-bundler command)
 pip install -e .
 
-# Run
-skill-bundler pack <skill-dir>          # clipboard by default, -o writes a file
-skill-bundler unpack <bundle.md> -d <dir>
+# Pack: bare path defaults to pack (backward compat); -c/-t/-o are mutually exclusive
+skill-bundler pack <skill-dir>          # clipboard (default)
+skill-bundler pack <skill-dir> -t       # stdout
+skill-bundler pack <skill-dir> -o       # writes <skill>.one-page.md next to skill dir; refuses to overwrite
 
-# Test (install first, or prefix with PYTHONPATH=src)
-python -m unittest discover -s tests
+# Unpack: needs a source; destination defaults to ./<skill-title>/
+skill-bundler unpack <bundle.md> -d <dir>            # from file
+skill-bundler unpack -c -d <dir>                     # from clipboard
+skill-bundler unpack <bundle.md> -d <dir> --force    # only way to overwrite
+
+# Index: survey a whole Collection (Delivery Target flags mirror pack)
+skill-bundler index <collection-dir> -t              # stdout (clipboard is default, -o writes file)
+skill-bundler index <collection-dir> -r -t           # include nested skills
+
+# Test (install first, or prefix with PYTHONPATH=src; use python3 on macOS)
+PYTHONPATH=src python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m unittest tests.test_bundler -v        # one module
+PYTHONPATH=src python3 -m unittest tests.test_unpacker.TestUnpacker.<test> -v  # one test
 ```
+
+## Notes
+
+- Clipboard: macOS built in (`pbcopy`/`pbpaste`); Linux needs `wl-copy`/`wl-paste`, `xclip`, or `xsel`; Windows unsupported.
+- Round-trip safety net: `tests/test_unpacker.py::test_round_trip_pack_and_unpack` guards the pack/unpack format contract — run it after touching `bundler.py` or `unpacker.py`.
 
 ## Specs and decisions
 
@@ -50,7 +63,7 @@ Numbering is sequential per directory: check the highest existing file and add o
 - Use the domain words from `CONTEXT.md` (Skill, Bundle, Structure Map, Inlined File, Skipped File, Delivery Target) and avoid the alternatives it lists.
 - Naming: `snake_case` for functions and variables, `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants, `_` prefix for private helpers, booleans start with `is_`, `has_`, `can_`, or `should_`. Detailed rules live in `.agents/rules/naming-style.md`.
 - Build the minimum that works. No unrequested abstractions or dependencies, delete rather than add.
-- Domain modules raise `UnpackError` and return values; `cli.py` is the only place that calls `sys.exit`.
+- Domain modules raise `UnpackError` or `ValueError` and return values; `cli.py` is the only place that calls `sys.exit`.
 - Do not list, track, or document installed agent skills or skill directories in AGENTS.md, README.md, or any context file. Never add an Agent skills section unless explicitly requested by the user (see `.agents/rules/skills-policy.md`).
 
 ## Context files
@@ -58,5 +71,4 @@ Numbering is sequential per directory: check the highest existing file and add o
 - [src/skill_bundler/AGENTS.md](src/skill_bundler/AGENTS.md): package internals and the bundle format contract
 - [.agents/rules/naming-style.md](.agents/rules/naming-style.md): code naming conventions and domain vocabulary guidelines
 - [.agents/rules/skills-policy.md](.agents/rules/skills-policy.md): skills documentation restrictions
-
-_Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._
+- [.agents/rules/ponytail.md](.agents/rules/ponytail.md): minimal-diff, stdlib-first implementation style
