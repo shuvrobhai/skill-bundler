@@ -14,9 +14,9 @@
 pip install -e .
 
 # Pack: bare path defaults to pack (backward compat); -c/-t/-o are mutually exclusive
-skill-bundler pack <skill-dir>          # clipboard (default)
-skill-bundler pack <skill-dir> -t       # stdout
-skill-bundler pack <skill-dir> -o       # writes <skill>.one-page.md next to skill dir; refuses to overwrite
+skill-bundler pack <skill-dir>                  # clipboard (default)
+skill-bundler pack <skill-dir> -t               # stdout
+skill-bundler pack <skill-dir> -o [--force]     # writes <skill>.one-page.md next to skill dir; refuses to overwrite unless --force
 
 # Unpack: needs a source; destination defaults to ./<skill-title>/
 skill-bundler unpack <bundle.md> -d <dir>            # from file
@@ -26,6 +26,7 @@ skill-bundler unpack <bundle.md> -d <dir> --force    # only way to overwrite
 # Index: survey a whole Collection (Delivery Target flags mirror pack)
 skill-bundler index <collection-dir> -t              # stdout (clipboard is default, -o writes file)
 skill-bundler index <collection-dir> -r -t           # include nested skills
+skill-bundler index <collection-dir> -o [--force]    # writes <collection>.one-page.md; refuses to overwrite unless --force
 
 # Test (install first, or prefix with PYTHONPATH=src; use python3 on macOS)
 PYTHONPATH=src python3 -m unittest discover -s tests
@@ -63,7 +64,7 @@ Numbering is sequential per directory: check the highest existing file and add o
 - Use the domain words from `CONTEXT.md` (Skill, Bundle, Structure Map, Inlined File, Skipped File, Delivery Target) and avoid the alternatives it lists.
 - Naming: `snake_case` for functions and variables, `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants, `_` prefix for private helpers, booleans start with `is_`, `has_`, `can_`, or `should_`. Detailed rules live in `.agents/rules/naming-style.md`.
 - Build the minimum that works. No unrequested abstractions or dependencies, delete rather than add.
-- Domain modules raise `UnpackError` or `ValueError` and return values; `cli.py` is the only place that calls `sys.exit`.
+- Domain modules raise `UnpackError`, `ValueError`, or `ClipboardError` and return values; `cli.py` is the only place that calls `sys.exit`.
 - Do not list, track, or document installed agent skills or skill directories in AGENTS.md, README.md, or any context file. Never add an Agent skills section unless explicitly requested by the user (see `.agents/rules/skills-policy.md`).
 
 ## Context files

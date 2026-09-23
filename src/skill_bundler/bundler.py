@@ -3,23 +3,16 @@
 import re
 from pathlib import Path
 
-EXTENSION_LANGUAGE_TAGS = {
-    ".py": "python",
-    ".md": "markdown",
-    ".json": "json",
-    ".yaml": "yaml",
-    ".yml": "yaml",
-    ".toml": "toml",
-    ".sh": "bash",
-    ".txt": "text",
-    ".html": "html",
-    ".css": "css",
-    ".js": "javascript",
-    ".ts": "typescript",
-    ".sql": "sql",
-}
-
-BINARY_PROBE_SIZE = 8192
+from skill_bundler.constants import (
+    BINARY_NOTICE,
+    BINARY_PROBE_SIZE,
+    EXTENSION_LANGUAGE_TAGS,
+    SKILL_MARKER_RELATIVE_PATH,
+    SOURCE_COMMENT_PREFIX,
+    SOURCE_COMMENT_SUFFIX,
+    TITLE_PREFIX,
+)
+from skill_bundler.frontmatter import parse_skill, parse_skill_text
 
 
 def is_excluded_path(path: Path) -> bool:
@@ -27,28 +20,6 @@ def is_excluded_path(path: Path) -> bool:
     return any(part.startswith(".") for part in path.parts) or (
         "__pycache__" in path.parts
     )
-
-
-def parse_skill(skill_md_path: Path) -> tuple[str, str, str]:
-    """Return (name, description, body) from SKILL.md."""
-    text = skill_md_path.read_text(encoding="utf-8")
-    name = ""
-    description = ""
-    body = text
-
-    # Simple key:value frontmatter parser
-    if text.startswith("---"):
-        parts = re.split(r"^---\s*$", text, maxsplit=2, flags=re.MULTILINE)
-        if len(parts) >= 3:
-            frontmatter = parts[1]
-            body = parts[2].lstrip("\n")
-            for line in frontmatter.splitlines():
-                if line.startswith("name:"):
-                    name = line.split(":", 1)[1].strip().strip("\"'")
-                elif line.startswith("description:"):
-                    description = line.split(":", 1)[1].strip().strip("\"'")
-
-    return name, description, body
 
 
 def collect_skill_files(skill_dir: Path) -> list[Path]:
@@ -85,7 +56,9 @@ def _render_structure_map_body(directory: Path, prefix: str, lines: list[str]) -
         [
             p
             for p in directory.iterdir()
-            if not is_excluded_path(Path(p.name)) and not p.is_symlink()
+            if not p.name.startswith(".")
+            and p.name != "__pycache__"
+            and not p.is_symlink()
         ],
         key=_structure_map_sort_key,
     )
@@ -101,7 +74,7 @@ def _render_structure_map_body(directory: Path, prefix: str, lines: list[str]) -
 
 
 def build_structure_map(skill_dir: Path) -> str:
-    """Return a text Structure Map representation of the skill directory."""
+    """Return a text tree representation (Structure Map) of the skill directory."""
     lines = [skill_dir.name]
     _render_structure_map_body(skill_dir, "", lines)
     return "\n".join(lines)
@@ -119,18 +92,48 @@ def _build_code_fence(content: str, lang: str) -> tuple[str, str]:
     return opening, backtick_fence
 
 
+def validate_output(
+    output_text: str,
+    skill_body: str,
+    files: list[Path],
+    skipped_files: list[str],
+    skill_dir: Path,
+) -> None:
+    """Validate that the bundle document satisfies structural integrity constraints."""
+    if "Skill's Structure Map" not in output_text:
+        raise ValueError("Validation failed: structure map is missing.")
+
+    if skill_body and skill_body.strip()[:200] not in output_text:
+        raise ValueError("Validation failed: SKILL.md body is missing from output.")
+
+    expected_skill_marker = f"{SOURCE_COMMENT_PREFIX} {SKILL_MARKER_RELATIVE_PATH} {SOURCE_COMMENT_SUFFIX}"
+    if expected_skill_marker not in output_text:
+        raise ValueError("Validation failed: SKILL.md source separator is missing.")
+
+    for path in files:
+        rel_posix = path.relative_to(skill_dir).as_posix()
+        expected_marker = f"{SOURCE_COMMENT_PREFIX} {rel_posix} {SOURCE_COMMENT_SUFFIX}"
+        if expected_marker not in output_text:
+            raise ValueError(f"Validation failed: missing source separator for {rel_posix}")
+
+    for skipped in skipped_files:
+        expected_marker = f"{SOURCE_COMMENT_PREFIX} {skipped} {SOURCE_COMMENT_SUFFIX}"
+        if expected_marker not in output_text:
+            raise ValueError(f"Validation failed: missing source separator for skipped file {skipped}")
+
+
 def build_bundle_document(
     skill_dir: Path, skill_md_path: Path, files: list[Path]
 ) -> tuple[str, int, list[str]]:
     """Build one Markdown document with metadata, structure map, and inlined files."""
-    name, description, body = parse_skill(skill_md_path)
+    skill_text = skill_md_path.read_text(encoding="utf-8")
+    name, description, body = parse_skill_text(skill_text)
     title = name or skill_dir.name
     uri = skill_md_path.resolve().as_uri()
     structure_map = build_structure_map(skill_dir)
-    skill_text = skill_md_path.read_text(encoding="utf-8")
 
     lines = [
-        f"**Title:** One Page Version of {title}",
+        f"{TITLE_PREFIX}{title}",
         "",
         f"**Source:** [{uri}]({uri})",
         "",
@@ -144,7 +147,7 @@ def build_bundle_document(
         "",
         "---",
         "",
-        "<!-- SOURCE: SKILL.md -->",
+        f"{SOURCE_COMMENT_PREFIX} {SKILL_MARKER_RELATIVE_PATH} {SOURCE_COMMENT_SUFFIX}",
         "",
         "## SKILL.md",
         "",
@@ -170,11 +173,11 @@ def build_bundle_document(
         if content is None:
             skipped_files.append(relative_path)
             lines.extend([
-                f"<!-- SOURCE: {relative_path} -->",
+                f"{SOURCE_COMMENT_PREFIX} {relative_path} {SOURCE_COMMENT_SUFFIX}",
                 "",
                 f"## {relative_path}",
                 "",
-                "_binary file — not inlined_",
+                BINARY_NOTICE,
                 "",
             ])
             continue
@@ -183,7 +186,7 @@ def build_bundle_document(
         opening, closing = _build_code_fence(content, lang)
 
         lines.extend([
-            f"<!-- SOURCE: {relative_path} -->",
+            f"{SOURCE_COMMENT_PREFIX} {relative_path} {SOURCE_COMMENT_SUFFIX}",
             "",
             f"## {relative_path}",
             "",
@@ -194,4 +197,6 @@ def build_bundle_document(
         ])
         inlined_count += 1
 
-    return "\n".join(lines), inlined_count, skipped_files
+    document = "\n".join(lines)
+    validate_output(document, body, files, skipped_files, skill_dir)
+    return document, inlined_count, skipped_files

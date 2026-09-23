@@ -3,7 +3,13 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from skill_bundler.bundler import is_excluded_path, parse_skill
+from skill_bundler.bundler import is_excluded_path
+from skill_bundler.constants import (
+    COLLECTION_TITLE_PREFIX,
+    SOURCE_COMMENT_PREFIX,
+    SOURCE_COMMENT_SUFFIX,
+)
+from skill_bundler.frontmatter import parse_skill
 
 DESCRIPTION_LIMIT = 80
 
@@ -13,6 +19,7 @@ class SkillEntry(NamedTuple):
     description: str
     relative_path: str
     skill_md: Path
+    body: str = ""
 
 
 def _truncate(text: str, limit: int) -> str:
@@ -30,12 +37,13 @@ def _table_cell(text: str) -> str:
 
 def _read_entry(collection_dir: Path, skill_md: Path) -> SkillEntry:
     """Read one SKILL.md into an entry, falling back to the dir name."""
-    name, description, _body = parse_skill(skill_md)
+    name, description, body = parse_skill(skill_md)
     return SkillEntry(
         name=name or skill_md.parent.name,
         description=description,
         relative_path=skill_md.relative_to(collection_dir).as_posix(),
         skill_md=skill_md,
+        body=body,
     )
 
 
@@ -46,28 +54,30 @@ def discover_skills(
     skills: list[SkillEntry] = []
     skipped: list[str] = []
 
-    if should_recursive:
-        candidates = sorted(
-            p for p in collection_dir.rglob("*") if p.is_dir() and not p.is_symlink()
-        )
-        pairs = [(candidate, candidate.relative_to(collection_dir)) for candidate in candidates]
-    else:
-        pairs = [
-            (child, Path(child.name))
-            for child in sorted(collection_dir.iterdir())
-            if child.is_dir() and not child.is_symlink()
-        ]
+    def _explore(directory: Path) -> None:
+        try:
+            children = sorted(directory.iterdir())
+        except OSError:
+            return
 
-    for candidate, relative in pairs:
-        if is_excluded_path(relative):
-            continue
-        skill_md = candidate / "SKILL.md"
-        if skill_md.is_file():
-            skills.append(_read_entry(collection_dir, skill_md))
-        else:
-            skipped.append(relative.as_posix())
+        for child in children:
+            if not child.is_dir() or child.is_symlink():
+                continue
+            relative = child.relative_to(collection_dir)
+            if is_excluded_path(relative):
+                continue
+            skill_md = child / "SKILL.md"
+            if skill_md.is_file():
+                skills.append(_read_entry(collection_dir, skill_md))
+                # Prune: do not traverse into internal subdirectories of a discovered skill
+            else:
+                skipped.append(relative.as_posix())
+                if should_recursive:
+                    _explore(child)
 
+    _explore(collection_dir)
     skills.sort(key=lambda entry: entry.name.lower())
+    skipped.sort()
     return skills, skipped
 
 
@@ -80,7 +90,7 @@ def build_collection_document(
 
     uri = collection_dir.resolve().as_uri()
     lines = [
-        f"**Title:** Collection Bundle — {collection_dir.name}",
+        f"{COLLECTION_TITLE_PREFIX}{collection_dir.name}",
         "",
         f"**Source:** [{uri}]({uri})",
         "",
@@ -99,10 +109,10 @@ def build_collection_document(
     lines.extend(["", "---", ""])
 
     for position, entry in enumerate(skills):
-        _name, _description, body = parse_skill(entry.skill_md)
+        body = entry.body if entry.body else parse_skill(entry.skill_md)[2]
         lines.extend(
             [
-                f"<!-- SOURCE: {entry.relative_path} -->",
+                f"{SOURCE_COMMENT_PREFIX} {entry.relative_path} {SOURCE_COMMENT_SUFFIX}",
                 "",
                 f"## {entry.name}",
                 "",

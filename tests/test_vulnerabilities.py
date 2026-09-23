@@ -1,4 +1,4 @@
-"""Reproduction test cases for discovered blind spots and boundary vulnerabilities."""
+"""Reproduction and regression test cases for security and boundary protections."""
 
 import tempfile
 import unittest
@@ -14,18 +14,18 @@ from skill_bundler.unpacker import (
 
 
 class TestVulnerabilitiesReproduction(unittest.TestCase):
-    """Demonstrates and tests vulnerabilities discovered by the analysts."""
+    """Verifies protections against path traversal, substring collisions, and delimiter splitting."""
 
     def test_title_sanitization_traversal(self):
-        """Bundle title of '..' must not resolve to '..' and escape destination."""
-        dot_bundle = "**Title:** One Page Version of ..\n"
-        dot_title = extract_skill_title(dot_bundle)
-        # Demonstrates the vulnerability: currently returns '..'
-        self.assertEqual(
-            dot_title,
-            "..",
-            "Vulnerability confirmed: title sanitization preserves relative '..' directory",
-        )
+        """Bundle title of '..', '.', or hidden name must fallback to unpacked-skill."""
+        for unsafe_title in ["..", ".", ".hidden", "../escape"]:
+            bundle = f"**Title:** One Page Version of {unsafe_title}\n"
+            sanitized = extract_skill_title(bundle)
+            self.assertEqual(
+                sanitized,
+                "unpacked-skill",
+                f"Unsafe title '{unsafe_title}' must fall back to 'unpacked-skill'",
+            )
 
     def test_binary_marker_substring_collision(self):
         """A text file containing '_binary file — not inlined_' must not be dropped."""
@@ -37,29 +37,43 @@ class TestVulnerabilitiesReproduction(unittest.TestCase):
             "```\n"
         )
         files, skipped = parse_bundle(bundle_with_binary_substring)
-        # Demonstrates the vulnerability: checker.py is incorrectly put in skipped
-        self.assertIn(
-            "checker.py",
-            skipped,
-            "Vulnerability confirmed: source file dropped due to substring match on binary marker",
-        )
-        self.assertNotIn("checker.py", files)
+        self.assertNotIn("checker.py", skipped)
+        self.assertIn("checker.py", files)
+        self.assertIn('MARKER = "_binary file — not inlined_"', files["checker.py"])
 
     def test_delimiter_collision_in_code_block(self):
-        """A file with an inlined <!-- SOURCE: ... --> inside a code block causes phantom files."""
+        """A file with an inlined <!-- SOURCE: ... --> inside a code block must not cause phantom files."""
         bundle_with_delimiter = (
             "**Title:** One Page Version of documentation\n\n"
+            "## Skill's Structure Map\n```\n"
+            "docs/guide.md\n"
+            "```\n\n"
             "<!-- SOURCE: SKILL.md -->\n\n## SKILL.md\n\nDocumentation\n\n"
             "<!-- SOURCE: docs/guide.md -->\n\n## docs/guide.md\n\n```markdown\n"
             "Example comment:\n<!-- SOURCE: phantom.py -->\nCode here\n```\n"
         )
         files, _ = parse_bundle(bundle_with_delimiter)
-        # Demonstrates the vulnerability: phantom.py is parsed as an independent extracted file
-        self.assertIn(
-            "phantom.py",
-            files,
-            "Vulnerability confirmed: in-band delimiter causes file boundary splitting",
+        self.assertNotIn("phantom.py", files)
+        self.assertIn("docs/guide.md", files)
+        self.assertIn("<!-- SOURCE: phantom.py -->", files["docs/guide.md"])
+
+    def test_dest_equals_target_resolved_rejected(self):
+        """A relative path that resolves to the destination directory itself must be rejected."""
+        dest = Path("/tmp/target_destination").resolve()
+        self.assertFalse(is_safe_relative_path(dest, dest))
+        self.assertFalse(is_safe_relative_path(dest / ".", dest))
+        self.assertFalse(is_safe_relative_path(dest / "..", dest))
+
+    def test_collection_bundle_rejection(self):
+        """Collection Bundles must be rejected explicitly."""
+        collection_bundle = (
+            "**Title:** Collection Bundle — my-collection\n\n"
+            "**Skills:** 2\n\n"
+            "<!-- SOURCE: skill-a/SKILL.md -->\n\nSkill A\n"
         )
+        with self.assertRaises(UnpackError) as ctx:
+            parse_bundle(collection_bundle)
+        self.assertEqual(str(ctx.exception), "Collection Bundles cannot be unpacked.")
 
 
 if __name__ == "__main__":

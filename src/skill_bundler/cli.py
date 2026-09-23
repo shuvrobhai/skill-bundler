@@ -4,12 +4,17 @@ import argparse
 import sys
 from pathlib import Path
 
+from skill_bundler import __version__
 from skill_bundler.bundler import (
     build_bundle_document,
     collect_skill_files,
     parse_skill,
 )
-from skill_bundler.clipboard import copy_to_clipboard, paste_from_clipboard
+from skill_bundler.clipboard import (
+    ClipboardError,
+    copy_to_clipboard,
+    paste_from_clipboard,
+)
 from skill_bundler.indexer import build_collection_document, discover_skills
 from skill_bundler.unpacker import (
     UnpackError,
@@ -24,10 +29,12 @@ def _deliver_document(
     args: argparse.Namespace,
     written_lines: list[str],
     copied_lines: list[str],
+    should_overwrite: bool = False,
 ) -> None:
     if args.output:
-        if out_path.exists():
-            sys.exit(f"Error: '{out_path}' already exists. Move or delete it first.")
+        can_overwrite = should_overwrite or getattr(args, "force", False)
+        if out_path.exists() and not can_overwrite:
+            sys.exit(f"Error: '{out_path}' already exists. Move or delete it first, or use --force.")
         out_path.write_text(document, encoding="utf-8")
         for line in written_lines:
             print(line)
@@ -35,7 +42,10 @@ def _deliver_document(
         print(document)
     else:
         # Default behavior: copy to clipboard
-        copy_to_clipboard(document)
+        try:
+            copy_to_clipboard(document)
+        except ClipboardError as err:
+            sys.exit(f"Error: {err}")
         for line in copied_lines:
             print(line)
 
@@ -50,19 +60,12 @@ def _handle_pack(args: argparse.Namespace) -> None:
         sys.exit(f"Error: '{skill_md_path}' does not exist (SKILL.md is required).")
 
     files = collect_skill_files(skill_dir)
-    document, inlined_count, skipped_files = build_bundle_document(
-        skill_dir, skill_md_path, files
-    )
-
-    _, _, skill_body = parse_skill(skill_md_path)
-    if "Skill's Structure Map" not in document:
-        sys.exit("Validation failed: structure map is missing.")
-    if skill_body and skill_body.strip()[:200] not in document:
-        sys.exit("Validation failed: SKILL.md body is missing from output.")
-    if inlined_count + len(skipped_files) > 0:
-        expected_comments = inlined_count + len(skipped_files) + 1
-        if document.count("<!-- SOURCE:") < expected_comments:
-            sys.exit("Validation failed: not all source separators made it into output.")
+    try:
+        document, inlined_count, skipped_files = build_bundle_document(
+            skill_dir, skill_md_path, files
+        )
+    except ValueError as err:
+        sys.exit(f"Validation failed: {err}")
 
     out_path = skill_dir.parent / f"{skill_dir.name}.one-page.md"
     written_lines = [
@@ -75,13 +78,23 @@ def _handle_pack(args: argparse.Namespace) -> None:
         skipped_lines.extend(f"     - {relative_path}" for relative_path in skipped_files)
         written_lines.extend(skipped_lines)
         copied_lines.extend(skipped_lines)
-    _deliver_document(document, out_path, args, written_lines, copied_lines)
+    _deliver_document(
+        document,
+        out_path,
+        args,
+        written_lines,
+        copied_lines,
+        should_overwrite=getattr(args, "force", False),
+    )
 
 
 def _handle_unpack(args: argparse.Namespace) -> None:
     # 1. Obtain bundle text from clipboard or file
     if args.clipboard:
-        bundle_text = paste_from_clipboard()
+        try:
+            bundle_text = paste_from_clipboard()
+        except ClipboardError as err:
+            sys.exit(f"Error: {err}")
         if not bundle_text or not bundle_text.strip():
             sys.exit("Error: Clipboard is empty.")
     elif args.bundle_file:
@@ -144,6 +157,7 @@ def _handle_index(args: argparse.Namespace) -> None:
             f"📋 Copied to clipboard "
             f"({indexed_count} skills indexed, {skipped_count} folders skipped)"
         ],
+        should_overwrite=getattr(args, "force", False),
     )
 
 
@@ -151,6 +165,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="skill-bundler",
         description="Bundle an AI agent skill directory into Markdown, or unpack a bundle back into files.",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -163,6 +183,12 @@ def build_parser() -> argparse.ArgumentParser:
         "skill_dir",
         type=Path,
         help="Path to the skill directory containing SKILL.md",
+    )
+    pack_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite existing output file when using -o",
     )
     pack_group = pack_parser.add_mutually_exclusive_group()
     pack_group.add_argument(
@@ -231,6 +257,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--recursive",
         action="store_true",
         help="Include skills nested below immediate children",
+    )
+    index_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite existing output file when using -o",
     )
     index_group = index_parser.add_mutually_exclusive_group()
     index_group.add_argument(

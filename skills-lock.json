@@ -31,6 +31,12 @@
       "skillPath": "skills/develop/SKILL.md",
       "computedHash": "42dc998560097e8fe95e78f08df574ef4e5110b9ceacdd5ae3fdf68808f51c59"
     },
+    "developer-tools": {
+      "source": "miles990/claude-software-skills",
+      "sourceType": "github",
+      "skillPath": "domain-applications/developer-tools/SKILL.md",
+      "computedHash": "c02f09372f2887bf8e103abd9f6be1b207d4c2ce4e75c8a1b08601c80d3e52bd"
+    },
     "document": {
       "source": "jsmastery-pro/skills",
       "sourceType": "github",

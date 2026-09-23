@@ -14,7 +14,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | A | Pack a skill | Shipped | existing |
 | B | Unpack a bundle | Shipped | existing |
 | C | Index a collection survey | Shipped | done |
-| D | Architecture and contract corrections | Next | planned |
+| D | Architecture and contract corrections | Shipped | done |
 | E | Release 0.2.0 closeout | Next | planned |
 
 ## Shipped
@@ -32,22 +32,22 @@ Survey a whole Collection into one Collection Bundle: a Skill Index table plus e
 - [x] Close it: flip spec 0001 to Accepted and mark done
 Spec 0001 · code in `src/skill_bundler/indexer.py`
 
-## Next
-
-### D. Architecture and contract corrections
+### D. Architecture and contract corrections · done
 Consolidate bundle markers in `constants.py`, extract `frontmatter.py`, raise typed `ClipboardError`, anchor delimiters to line starts, enforce exact binary notices, sanitize dot only titles, and add comprehensive edge case tests.
 **Done when:** spec 0002 acceptance criteria met, all vulnerability tests pass, and domain modules are free of `sys.exit`.
 - [x] Design it (spec): `/architect` (done, spec 0002)
-- [ ] Build it: `/develop 0002` (constants, frontmatter, clipboard, bundler, unpacker, cli)
-- [ ] Verify it: `/check verify 0002`
-- [ ] Test it: `/test 0002`
+- [x] Build it: `/develop 0002` (constants, frontmatter, clipboard, bundler, unpacker, cli)
+- [x] Verify it: `/check verify 0002` (46 tests green, manual checks passed)
+- [x] Test it: `/test 0002` (comprehensive test suite including frontmatter, cli, clipboard, dogfood)
 Spec 0002 · code in `src/skill_bundler/`
+
+## Next
 
 ### E. Release 0.2.0 closeout
 Ship what is built: commit the release notes and changelog, tag `v0.2.0`, close all specs, and verify `skill-bundler --version`.
 **Done when:** docs committed, `v0.2.0` tagged, spec 0002 Accepted, and `--version` exits 0.
 - [ ] Commit and tag: release notes plus changelog in, `v0.2.0` tag pushed
-- [ ] Settle `--version`: wire `action="version"` in `build_parser()`
+- [x] Settle `--version`: wire `action="version"` in `build_parser()`
 - [ ] Optional review: `/check review` before the tag if you want the gate
 
 ## Deferred

@@ -150,8 +150,18 @@ class TestIndexer(unittest.TestCase):
         self.assertIn("Collection Bundle", content)
         self.assertIn("solo/SKILL.md", content)
 
-        with self.assertRaises(SystemExit):
-            cli.main(["index", str(self.collection_dir), "-o"])
+    def test_recursive_discovery_prunes_internal_skill_subdirectories(self):
+        skill_dir = _write_skill(self.collection_dir, "complex", "complex", "Skill with subdirs")
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "scripts" / "run.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+        (skill_dir / "templates").mkdir()
+        (skill_dir / "templates" / "template.md").write_text("# Template\n", encoding="utf-8")
+
+        skills, skipped = discover_skills(self.collection_dir, should_recursive=True)
+        self.assertEqual([entry.name for entry in skills], ["complex"])
+        self.assertNotIn("complex/scripts", skipped)
+        self.assertNotIn("complex/templates", skipped)
+        self.assertEqual(skipped, [])
 
 
 if __name__ == "__main__":

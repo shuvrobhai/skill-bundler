@@ -7,6 +7,7 @@ from skill_bundler.bundler import (
     parse_skill,
 )
 from skill_bundler.clipboard import (
+    ClipboardError,
     copy_to_clipboard,
     paste_from_clipboard,
 )
@@ -28,6 +29,7 @@ directory_tree = build_structure_map
 __version__ = "0.2.0"
 __all__ = [
     "__version__",
+    "ClipboardError",
     "SkillEntry",
     "UnpackError",
     "build_bundle_document",

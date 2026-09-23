@@ -1,7 +1,7 @@
 # 0002. Architecture and Contract Corrections
 
 **Date**: 2026-09-24  
-**Status**: Proposed  
+**Status**: Complete  
 **Related**: [ADR 0005](../adr/0005-bundle-delimiter-integrity-and-title-sanitization.md)  
 
 ## Summary
@@ -152,9 +152,9 @@ DEFAULT_UNPACK_DIR = "unpacked-skill"
 
 ## Follow-up
 
-- [ ] Implement build tasks 1 through 5 (core domain hardening).
-- [ ] Implement build tasks 6 and 7 (CLI updates and indexer pruning).
-- [ ] Implement build tasks 8 and 9 (comprehensive test suite and documentation sync).
+- [x] Implement build tasks 1 through 5 (core domain hardening).
+- [x] Implement build tasks 6 and 7 (CLI updates and indexer pruning).
+- [x] Implement build tasks 8 and 9 (comprehensive test suite and documentation sync).
 
 ## References
 
