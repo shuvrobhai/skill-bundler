@@ -1,6 +1,6 @@
 # 0001 — `index`: bundle a whole Collection into one Markdown document
 
-Status: In Progress
+Status: Accepted
 Related: [ADR 0004](../adr/0004-collection-bundle-contract.md)
 
 ## Problem
