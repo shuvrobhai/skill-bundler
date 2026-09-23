@@ -6,6 +6,7 @@ from pathlib import Path
 
 from skill_bundler.bundler import (
     build_bundle_document,
+    build_structure_map,
     collect_skill_files,
     directory_tree,
     parse_skill,
@@ -72,14 +73,17 @@ class TestBundler(unittest.TestCase):
         self.assertNotIn(".hidden", file_names)
         self.assertNotIn("cache.pyc", file_names)
 
-    def test_directory_tree_structure(self):
-        tree = directory_tree(self.skill_dir)
-        self.assertIn("my-test-skill", tree)
-        self.assertIn("SKILL.md", tree)
-        self.assertIn("scripts", tree)
-        self.assertIn("helper.py", tree)
-        self.assertIn("config", tree)
-        self.assertIn("settings.yaml", tree)
+    def test_build_structure_map(self):
+        structure_map = build_structure_map(self.skill_dir)
+        self.assertIn("my-test-skill", structure_map)
+        self.assertIn("SKILL.md", structure_map)
+        self.assertIn("scripts", structure_map)
+        self.assertIn("helper.py", structure_map)
+        self.assertIn("config", structure_map)
+        self.assertIn("settings.yaml", structure_map)
+
+    def test_directory_tree_alias(self):
+        self.assertIs(directory_tree, build_structure_map)
 
     def test_build_bundle_document(self):
         files = collect_skill_files(self.skill_dir)

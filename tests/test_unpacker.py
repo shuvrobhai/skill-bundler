@@ -94,7 +94,7 @@ class TestUnpacker(unittest.TestCase):
         )
 
     def test_collision_guard_without_force(self):
-        """Unpacking into existing directory fails unless force=True."""
+        """Unpacking into existing directory fails unless should_overwrite=True."""
         files = collect_skill_files(self.source_skill)
         bundle_document, _, _ = build_bundle_document(
             self.source_skill, self.skill_md, files
@@ -104,18 +104,26 @@ class TestUnpacker(unittest.TestCase):
         dest_dir.mkdir()
         (dest_dir / "SKILL.md").write_text("Pre-existing content", encoding="utf-8")
 
-        # Must raise UnpackError without force
+        # Must raise UnpackError without should_overwrite
         with self.assertRaises(UnpackError) as ctx:
-            unpack_bundle(bundle_document, dest_dir, force=False)
+            unpack_bundle(bundle_document, dest_dir, should_overwrite=False)
         self.assertIn("Use --force", str(ctx.exception))
 
-        # Must succeed with force=True
-        unpacked_count, _ = unpack_bundle(bundle_document, dest_dir, force=True)
+        # Must succeed with should_overwrite=True
+        unpacked_count, _ = unpack_bundle(
+            bundle_document, dest_dir, should_overwrite=True
+        )
         self.assertEqual(unpacked_count, 3)
         self.assertEqual(
             (dest_dir / "SKILL.md").read_text(encoding="utf-8"),
             self.skill_md.read_text(encoding="utf-8"),
         )
+
+        # Backwards compatibility check: force=True also works
+        unpacked_count_force, _ = unpack_bundle(
+            bundle_document, dest_dir, force=True
+        )
+        self.assertEqual(unpacked_count_force, 3)
 
     def test_reject_unsafe_path_traversal(self):
         """Unpack must reject bundles containing path traversal attempts."""

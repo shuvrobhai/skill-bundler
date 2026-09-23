@@ -82,7 +82,7 @@ def _handle_unpack(args: argparse.Namespace) -> None:
     # 3. Unpack
     try:
         unpacked_count, skipped_files = unpack_bundle(
-            bundle_text, target_dir, force=args.force
+            bundle_text, target_dir, should_overwrite=args.force
         )
     except UnpackError as err:
         sys.exit(f"Error: {err}")

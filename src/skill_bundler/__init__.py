@@ -2,8 +2,8 @@
 
 from skill_bundler.bundler import (
     build_bundle_document,
+    build_structure_map,
     collect_skill_files,
-    directory_tree,
     parse_skill,
 )
 from skill_bundler.clipboard import (
@@ -17,11 +17,15 @@ from skill_bundler.unpacker import (
     unpack_bundle,
 )
 
+# Backwards compatibility alias
+directory_tree = build_structure_map
+
 __version__ = "0.1.0"
 __all__ = [
     "__version__",
     "UnpackError",
     "build_bundle_document",
+    "build_structure_map",
     "collect_skill_files",
     "copy_to_clipboard",
     "directory_tree",

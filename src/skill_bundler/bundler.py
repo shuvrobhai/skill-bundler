@@ -68,7 +68,7 @@ def collect_skill_files(skill_dir: Path) -> List[Path]:
     return files
 
 
-def _tree_sort_key(path: Path):
+def _structure_map_sort_key(path: Path):
     """SKILL.md first, then directories, then other files."""
     if path.name == "SKILL.md":
         return (0, 0, "")
@@ -77,7 +77,7 @@ def _tree_sort_key(path: Path):
     return (1, 0, path.name.lower())
 
 
-def _tree_body(directory: Path, prefix: str, lines: List[str]) -> None:
+def _render_structure_map_body(directory: Path, prefix: str, lines: List[str]) -> None:
     entries = sorted(
         [
             p
@@ -86,7 +86,7 @@ def _tree_body(directory: Path, prefix: str, lines: List[str]) -> None:
             and p.name != "__pycache__"
             and not p.is_symlink()
         ],
-        key=_tree_sort_key,
+        key=_structure_map_sort_key,
     )
 
     for i, path in enumerate(entries):
@@ -96,17 +96,21 @@ def _tree_body(directory: Path, prefix: str, lines: List[str]) -> None:
 
         if path.is_dir():
             child_prefix = "    " if is_last else "│   "
-            _tree_body(path, prefix + child_prefix, lines)
+            _render_structure_map_body(path, prefix + child_prefix, lines)
 
 
-def directory_tree(skill_dir: Path) -> str:
-    """Return a text tree representation (Structure Map) of the skill directory."""
+def build_structure_map(skill_dir: Path) -> str:
+    """Return a text Structure Map representation of the skill directory."""
     lines = [skill_dir.name]
-    _tree_body(skill_dir, "", lines)
+    _render_structure_map_body(skill_dir, "", lines)
     return "\n".join(lines)
 
 
-def _code_fence(content: str, lang: str) -> Tuple[str, str]:
+# Backwards compatibility alias
+directory_tree = build_structure_map
+
+
+def _build_code_fence(content: str, lang: str) -> Tuple[str, str]:
     """Return (opening_fence, closing_fence) avoiding collision with backticks in content."""
     max_run = max((len(match) for match in re.findall(r"`+", content)), default=0)
     backtick_fence = "`" * max(3, max_run + 1)
@@ -121,7 +125,7 @@ def build_bundle_document(
     name, description, body = parse_skill(skill_md_path)
     title = name or skill_dir.name
     uri = skill_md_path.resolve().as_uri()
-    tree = directory_tree(skill_dir)
+    structure_map = build_structure_map(skill_dir)
     skill_text = skill_md_path.read_text(encoding="utf-8")
 
     lines = [
@@ -134,7 +138,7 @@ def build_bundle_document(
         "# Skill's Structure Map",
         "",
         "```text",
-        tree,
+        structure_map,
         "```",
         "",
         "---",
@@ -175,7 +179,7 @@ def build_bundle_document(
             continue
 
         lang = EXTENSION_LANGUAGE_TAGS.get(path.suffix.lower(), "")
-        opening, closing = _code_fence(content, lang)
+        opening, closing = _build_code_fence(content, lang)
 
         lines.extend([
             f"<!-- SOURCE: {relative_path} -->",

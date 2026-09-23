@@ -34,7 +34,7 @@ def parse_bundle(bundle_text: str) -> Tuple[Dict[str, str], List[str]]:
             "Invalid bundle: missing '<!-- SOURCE: SKILL.md -->' marker."
         )
 
-    # Split by SOURCE comments: <!-- SOURCE: <rel_path> -->
+    # Split by SOURCE comments: <!-- SOURCE: <relative_path> -->
     pattern = r"<!-- SOURCE:\s*(.*?)\s*-->"
     parts = re.split(pattern, bundle_text)
     
@@ -77,10 +77,10 @@ def parse_bundle(bundle_text: str) -> Tuple[Dict[str, str], List[str]]:
 def is_safe_relative_path(target_dir: Path, relative_path_str: str) -> bool:
     """Ensure relative path does not escape target directory (prevent directory traversal)."""
     try:
-        rel_path = Path(relative_path_str)
-        if rel_path.is_absolute():
+        relative_path = Path(relative_path_str)
+        if relative_path.is_absolute():
             return False
-        dest = (target_dir / rel_path).resolve()
+        dest = (target_dir / relative_path).resolve()
         target_resolved = target_dir.resolve()
         return dest == target_resolved or target_resolved in dest.parents
     except Exception:
@@ -90,6 +90,7 @@ def is_safe_relative_path(target_dir: Path, relative_path_str: str) -> bool:
 def unpack_bundle(
     bundle_text: str,
     target_dir: Path,
+    should_overwrite: bool = False,
     force: bool = False,
 ) -> Tuple[int, List[str]]:
     """
@@ -98,29 +99,33 @@ def unpack_bundle(
     Args:
         bundle_text: The complete Markdown bundle content.
         target_dir: Destination directory.
-        force: If True, overwrite existing files without error.
+        should_overwrite: If True, overwrite existing files without error.
+        force: Backwards-compatible alias for should_overwrite.
         
     Returns:
         (unpacked_count, skipped_files)
     """
+    if force:
+        should_overwrite = True
+
     files, skipped_files = parse_bundle(bundle_text)
     target_dir = target_dir.resolve()
 
     # 1. Path safety check
-    for rel_path in files.keys():
-        if not is_safe_relative_path(target_dir, rel_path):
+    for relative_path in files.keys():
+        if not is_safe_relative_path(target_dir, relative_path):
             raise UnpackError(
-                f"Security violation: unsafe path '{rel_path}' attempts to escape target directory."
+                f"Security violation: unsafe path '{relative_path}' attempts to escape target directory."
             )
 
     # 2. Collision check
     existing_conflicts = []
-    for rel_path in files.keys():
-        dest_path = target_dir / rel_path
+    for relative_path in files.keys():
+        dest_path = target_dir / relative_path
         if dest_path.exists():
-            existing_conflicts.append(rel_path)
+            existing_conflicts.append(relative_path)
 
-    if existing_conflicts and not force:
+    if existing_conflicts and not should_overwrite:
         conflict_list = "\n".join(f"  - {p}" for p in existing_conflicts)
         raise UnpackError(
             f"Destination directory contains {len(existing_conflicts)} existing file(s):\n"
@@ -132,8 +137,8 @@ def unpack_bundle(
     target_dir.mkdir(parents=True, exist_ok=True)
     unpacked_count = 0
 
-    for rel_path, content in files.items():
-        dest_path = target_dir / rel_path
+    for relative_path, content in files.items():
+        dest_path = target_dir / relative_path
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         if content and not content.endswith("\n"):
             content = content + "\n"
