@@ -1,0 +1,53 @@
+# Scope: skill-bundler
+
+A stdlib only CLI that packs an AI agent Skill into one shareable Bundle, unpacks it back, and surveys a whole Collection. Built for anyone passing skills into LLM sessions.
+
+**Build approach:** Tracer Bullet (each feature end to end through CLI plus logic, working).
+**Workflow:** Beta (check verify, then test). The project default level of rigor. `/architect` is the recommended first stop for a feature with a real decision, but skippable when you already know the build. Any feature can carry its own tag (e.g. `· GA`) to do more or less.
+
+_These are recommendations to keep your build orderly, not requirements. Skip anything that does not fit: if you already know how to build a feature, use `/develop` and skip `/architect`. You decide when a feature is `done`._
+
+## At a glance
+
+| # | Feature | Phase | Status |
+|---|---------|-------|--------|
+| A | Pack a skill | Shipped | existing |
+| B | Unpack a bundle | Shipped | existing |
+| C | Index a collection survey | Shipped | in-progress |
+| D | Release 0.2.0 closeout | Next | planned |
+
+## Shipped
+
+### A. Pack a skill · existing
+Bundle one Skill directory into a single Markdown document: metadata, Structure Map, every Inlined File, names of Skipped Files, delivered to the clipboard, stdout, or a `.one-page.md` file. code in `src/skill_bundler/bundler.py`, `src/skill_bundler/cli.py`
+
+### B. Unpack a bundle · existing
+Rebuild a Skill directory from a Bundle, from a file or the clipboard, with strict validation, path traversal guards, and a refuse to overwrite guard unless `--force` is passed. code in `src/skill_bundler/unpacker.py`, `src/skill_bundler/cli.py`
+
+### C. Index a collection survey · in-progress
+Survey a whole Collection into one Collection Bundle: a Skill Index table plus each `SKILL.md` body, immediate children by default, nested skills with `-r`. Only `SKILL.md` files ride along; a survey is never valid `unpack` input.
+**Done when:** spec 0001 reads Accepted and the feature is marked done.
+- [x] Build it: `/develop index` (spec 0001, code in `src/skill_bundler/indexer.py`, 10 tests green, verified live against 19 real skills)
+- [ ] Close it: flip spec 0001 to Accepted and mark done
+Spec 0001 · code in `src/skill_bundler/indexer.py`
+
+## Next
+
+### D. Release 0.2.0 closeout
+Ship what is built: commit the release notes and changelog, tag `v0.2.0`, close spec 0001, and settle the broken `--version` flag (wire it or remove it from the shim whitelist).
+**Done when:** docs committed, `v0.2.0` tagged, spec 0001 Accepted, `skill-bundler --version` exits 0 or the flag is gone.
+- [ ] Commit and tag: release notes plus changelog in, `v0.2.0` tag pushed
+- [ ] Settle `--version`: wire `action="version"` or drop it from the whitelist
+- [ ] Optional review: `/check review` before the tag if you want the gate
+
+## Deferred
+Out of scope for the current build pass, kept so the plan stays honest.
+- **Collection unpack round trip**: rebuild a Collection from a Collection Bundle · needs a decision (ADR 0004 ruled it a separate feature)
+- **`--index-only` mode**: survey with the Skill Index and no bodies · needs a decision (spec 0001 left it out of scope)
+
+## Legend
+
+- **Next step** = the first unticked box (always a command or a tracked milestone).
+- **Status** `planned` → `in-progress` → `done`, plus `existing` (built before this scope, left alone by `/develop` and `/sync`) .
+- **Pointer line** (`spec <n> · code in <path>`) appears only once those exist.
+- **Atomic build tasks live in the spec, not here.** This file carries intent, the `Done when` line, and boxes only.
