@@ -33,9 +33,9 @@ Fourth, path safety checks in unpacker permit edge cases such as dot only titles
 - **AC-2 (Shared Utilities)**: Frontmatter parsing and path exclusion logic live in dedicated shared modules (such as `frontmatter.py` and `utils.py`), removing hidden couplings.
 - **AC-3 (No Domain System Exits)**: All domain modules (including clipboard and bundler) raise typed exceptions (`ClipboardError`, `ValueError`, `UnpackError`); `cli.py` remains the only module allowed to invoke `sys.exit`.
 - **AC-4 (Explicit Collection Rejection)**: `parse_bundle` raises `UnpackError("Collection Bundles cannot be unpacked.")` immediately when encountering a Collection Bundle header without the single skill marker.
-- **AC-5 (Marker Anchoring and Exact Binary Match)**: Marker parsing anchors `<!-- SOURCE:` to line starts, and binary file skip checks require exact string equality after stripping whitespace.
+- **AC-5 (Non Destructive Delimiter Parsing and Exact Binary Match)**: Marker parsing anchors to line starts using `(?m)^<!-- SOURCE:\s*(.*?)\s*-->\r?$` supporting both LF and CRLF line endings. The unpacker uses a non destructive sequential parser (`re.finditer`) validated against expected paths extracted from the Structure Map; any marker inside a code block that does not match a declared path is preserved intact within the enclosing file content. Binary file skip checks require exact string equality (`== BINARY_NOTICE`) after stripping whitespace.
 - **AC-6 (Strict Frontmatter and Multiline YAML)**: Frontmatter parsing splits only on opening markers, preserves body content containing horizontal rules, and folds multiline description blocks.
-- **AC-7 (Hardened Path Safety)**: Title extraction sanitizes dot only (`.`) or parent (`..`) strings by falling back to `unpacked-skill`, and path traversal validation disallows paths resolving directly to the target directory for file entries.
+- **AC-7 (Hardened Path Safety and Title Sanitization)**: Title extraction sanitizes dot only (`.`), parent (`..`), and hidden directory names (names starting with `.`) by falling back to `DEFAULT_UNPACK_DIR` (`"unpacked-skill"`). Path traversal validation disallows paths resolving directly to the target directory for file entries.
 - **AC-8 (CLI Consistency)**: `-v` and `--version` are registered in the argument parser, and `--force` allows `-o` file overwriting across pack and index commands.
 - **AC-9 (Efficient I/O and Domain Validation)**: `build_bundle_document` reads `SKILL.md` once, validates structural integrity internally within the domain layer, and eliminates redundant disk reads in `cli.py`.
 - **AC-10 (Recursive Discovery Pruning)**: Recursive skill discovery stops traversing deeper once a directory containing `SKILL.md` is found, preventing internal scripts from being counted as skills or skipped folders.
@@ -97,9 +97,12 @@ src/skill_bundler/
 
 ```python
 # src/skill_bundler/constants.py
+import re
 
 SOURCE_COMMENT_PREFIX = "<!-- SOURCE:"
 SOURCE_COMMENT_SUFFIX = "-->"
+SOURCE_PATTERN = re.compile(r"(?m)^<!-- SOURCE:\s*(.*?)\s*-->\r?$")
+
 SKILL_MARKER_RELATIVE_PATH = "SKILL.md"
 SKILL_MARKER_COMMENT = f"{SOURCE_COMMENT_PREFIX} {SKILL_MARKER_RELATIVE_PATH} {SOURCE_COMMENT_SUFFIX}"
 
@@ -112,13 +115,19 @@ COLLECTION_TITLE_PREFIX = "**Title:** Collection Bundle — "
 DEFAULT_UNPACK_DIR = "unpacked-skill"
 ```
 
+### Parser and Backward Compatibility Contracts
+
+- **Structure Map Path Extraction**: `unpacker.py` implements `parse_structure_map_paths(bundle_text: str) -> Set[str]` to extract valid file paths from the preamble.
+- **Non Destructive Delimiter Parsing**: `unpacker.parse_bundle` uses `SOURCE_PATTERN.finditer(bundle_text)` to find candidate sections. If a matched path is not present in the Structure Map (or not `SKILL.md`), it is treated as inlined content rather than a file boundary, preventing destructive fragmentation.
+- **Backward Compatibility Alias**: `bundler.py` retains `parse_skill = frontmatter.parse_skill` to support existing external scripts importing directly from `skill_bundler.bundler`.
+
 ## Build plan
 
-1. Create `src/skill_bundler/constants.py` and migrate marker constants, satisfies **AC-1**
+1. Create `src/skill_bundler/constants.py` with constants and `SOURCE_PATTERN`, satisfies **AC-1**
 2. Create `src/skill_bundler/frontmatter.py` with strict splitting and multiline description folding, satisfies **AC-2**, **AC-6**
 3. Refactor `src/skill_bundler/clipboard.py` to raise `ClipboardError` instead of calling `sys.exit`, satisfies **AC-3**
-4. Update `src/skill_bundler/bundler.py` to read `SKILL.md` once, validate structural integrity internally, and return emitted paths, satisfies **AC-5**, **AC-9**
-5. Update `src/skill_bundler/unpacker.py` with line anchored marker splitting, exact binary notice matching, explicit Collection Bundle rejection, and hardened path checks, satisfies **AC-4**, **AC-5**, **AC-7**
+4. Update `src/skill_bundler/bundler.py` to read `SKILL.md` once, maintain `parse_skill` alias, validate structural integrity internally, and return emitted paths, satisfies **AC-2**, **AC-5**, **AC-9**
+5. Update `src/skill_bundler/unpacker.py` with Structure Map path extraction, non destructive sequential marker parsing (`re.finditer` with CRLF support), exact binary notice matching, explicit Collection Bundle rejection, and hardened title/path checks, satisfies **AC-4**, **AC-5**, **AC-7**
 6. Refactor `src/skill_bundler/cli.py` to handle `ClipboardError`, register `-v` / `--version`, accept `--force` for `-o` overwrite across subcommands, and remove duplicate file reads, satisfies **AC-3**, **AC-8**, **AC-9**
 7. Implement `src/skill_bundler/indexer.py` with pruned recursive search to prevent nested script directory leakage, satisfies **AC-10**
 8. Expand test suite in `tests/` with edge case tests for frontmatter, traversal, clipboard fallbacks, marker contracts, and dogfooding, satisfies **AC-11**
