@@ -40,3 +40,6 @@ htmlcov/
 
 # Output files
 *.one-page.md
+
+# Agent workspace data
+.workbuddy-ai/

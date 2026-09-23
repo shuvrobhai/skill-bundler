@@ -19,18 +19,26 @@ Rules for naming variables, functions, classes, and constants in this repository
 
 ## Boolean names
 
-- Start boolean variables with `is_`, `has_`, `can_`, or `should_`.
-- Use `is_` for states or properties: `is_active`, `is_valid`.
+- Start boolean variables and function parameters with `is_`, `has_`, `can_`, or `should_`.
+- Use `is_` for states or properties: `is_active`, `is_valid`, `is_binary`.
 - Use `has_` for possession or inclusion: `has_permission`, `has_error`.
 - Use `can_` for ability: `can_edit`, `can_delete`.
-- Use `should_` for decisions: `should_validate`, `should_render`.
+- Use `should_` for decisions and boolean parameters: `should_validate`, `should_render`, `should_overwrite: bool = False`.
 
 ## Functions
 
 - Use a verb or verb phrase: `get_user`, `parse_skill`, `validate_output`.
 - Name functions by what they do, not how they do it.
 - If a function mutates state, include that in the name: `fetch_and_update_user_login`, not `get_user`.
-- Use `_` prefix for private helpers: `_tree_body`, `_code_fence`.
+- Use `_` prefix for private helpers, and ensure helpers are also verb phrases: `_render_tree_body`, `_build_code_fence`.
+
+## Domain vocabulary alignment
+
+- Prefer domain terms defined in `CONTEXT.md` for code identifiers:
+  - Use `structure_map` over generic terms like `tree`, `file_list`, or `hierarchy`.
+  - Use `bundle` over `archive`, `package`, or `dump`.
+  - Use `collection` and `collection_bundle` for multi-skill sets.
+  - Use `relative_path` or `file_path` over abbreviations like `rel` or `p`.
 
 ## Constants
 
@@ -42,7 +50,7 @@ Rules for naming variables, functions, classes, and constants in this repository
 
 - Avoid uncommon abbreviations.
 - Allow widely known abbreviations: `id`, `url`, `html`, `api`, `json`, `http`.
-- Spell out shortened words when clarity improves: `relative_path` not `rel`, `description` not `desc`, `current_run` not `curr`.
+- Spell out shortened words when clarity improves: `relative_path` not `rel` or `rel_path`, `command` not `cmd`, `description` not `desc`.
 
 ## Files and modules
 

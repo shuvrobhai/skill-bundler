@@ -12,6 +12,14 @@ _Avoid_: Plugin folder, tool package, agent folder
 A single, self-contained Markdown document aggregating a Skill's metadata, directory structure, and text files.
 _Avoid_: Package, archive, dump, one-page file
 
+**Collection**:
+A directory whose immediate children are Skill directories.
+_Avoid_: Skills folder, skill library, catalog
+
+**Collection Bundle**:
+A single Markdown document aggregating every Skill in a Collection into one shareable file.
+_Avoid_: Index file, multi-skill bundle, mega bundle
+
 **SKILL.md**:
 The root instruction and metadata markdown document required at the top level of every Skill.
 _Avoid_: Manifest, skill config, readme
