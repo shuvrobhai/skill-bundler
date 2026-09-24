@@ -15,8 +15,8 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | B | Unpack a bundle | Shipped | existing |
 | C | Index a collection survey | Shipped | done |
 | D | Architecture and contract corrections | Shipped | done |
-| E | Release 0.2.0 closeout | Next | planned |
-| F | Contract hardening and parser fixes | Next | planned |
+| E | Release 0.2.0 closeout | Shipped | done |
+| F | Contract hardening and parser fixes | Shipped | done |
 
 ## Shipped
 
@@ -42,14 +42,20 @@ Consolidate bundle markers in `constants.py`, extract `frontmatter.py`, raise ty
 - [x] Test it: `/test 0002` (comprehensive test suite including frontmatter, cli, clipboard, dogfood)
 Spec 0002 · code in `src/skill_bundler/`
 
-## Next
-
-### E. Release 0.2.0 closeout
+### E. Release 0.2.0 closeout · done
 Ship what is built: commit the release notes and changelog, tag `v0.2.0`, close all specs, and verify `skill-bundler --version`.
-**Done when:** docs committed, `v0.2.0` tagged, spec 0002 Accepted, and `--version` exits 0.
-- [ ] Commit and tag: release notes plus changelog in, `v0.2.0` tag pushed
+- [x] Commit and tag: release notes plus changelog in, `v0.2.0` tag pushed
 - [x] Settle `--version`: wire `action="version"` in `build_parser()`
-- [ ] Optional review: `/check review` before the tag if you want the gate
+
+### F. Contract hardening and parser fixes · done
+Dead code removal and parser hardening for the 0.2.1 patch: remove post-hoc validate_output checks, unused constants, and redundant re-parse fallbacks.
+- [x] Remove dead validate_output from bundler
+- [x] Remove unused SKILL_MARKER_COMMENT constant
+- [x] Remove redundant re-parse fallback in indexer
+- [x] Bump version to 0.2.1, update changelog and release notes
+Spec 0002 · code in `src/skill_bundler/`
+
+## Next
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.

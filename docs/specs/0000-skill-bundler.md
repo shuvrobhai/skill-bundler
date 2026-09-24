@@ -1,7 +1,7 @@
 # 0000 — skill-bundler tool spec
 
 **Status:** Accepted
-**Covers:** v0.2.0 (`f1a2e74`)
+**Covers:** v0.2.1 (`524634d`)
 
 This is the whole tool on one page: what it does, the exact CLI surface, the
 document contracts, and the conventions the code follows. Feature history lives
