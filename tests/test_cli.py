@@ -1,4 +1,4 @@
-"""Unit tests for the skill_bundler.cli module."""
+"""Unit tests for the bundium.cli module."""
 
 import io
 import tempfile
@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from skill_bundler import __version__, cli
-from skill_bundler.clipboard import ClipboardError
+from bundium import __version__, cli
+from bundium.clipboard import ClipboardError
 
 
 class TestCLI(unittest.TestCase):
@@ -58,9 +58,61 @@ class TestCLI(unittest.TestCase):
         cli.main(["index", str(self.root_path), "-o", "--force"])
         self.assertIn("Collection Bundle", out_path.read_text(encoding="utf-8"))
 
+    def test_bare_path_defaults_to_pack_terminal(self):
+        with patch("sys.stdout", new=io.StringIO()) as fake_out:
+            cli.main([str(self.skill_dir), "-t"])
+        output = fake_out.getvalue()
+        self.assertIn("**Title:** One Page Version of my-skill", output)
+        self.assertIn("<!-- SOURCE: SKILL.md -->", output)
+
+    def test_unpack_file_with_destination(self):
+        bundle_file = self.root_path / "skill.one-page.md"
+        bundle_file.write_text(
+            "**Title:** One Page Version of unpacked-test\n\n"
+            "<!-- SOURCE: SKILL.md -->\n\n## SKILL.md\n\n# Unpacked Content\n",
+            encoding="utf-8",
+        )
+        dest_dir = self.root_path / "custom-dest"
+        with patch("sys.stdout", new=io.StringIO()) as fake_out:
+            cli.main(["unpack", str(bundle_file), "-d", str(dest_dir)])
+        self.assertTrue((dest_dir / "SKILL.md").is_file())
+        self.assertEqual(
+            (dest_dir / "SKILL.md").read_text(encoding="utf-8"),
+            "# Unpacked Content\n",
+        )
+        self.assertIn("Successfully unpacked skill to:", fake_out.getvalue())
+
+    def test_unpack_collision_refuses_without_force(self):
+        bundle_file = self.root_path / "collision.one-page.md"
+        bundle_file.write_text(
+            "**Title:** One Page Version of clash\n\n"
+            "<!-- SOURCE: SKILL.md -->\n\n## SKILL.md\n\n# New\n",
+            encoding="utf-8",
+        )
+        dest_dir = self.root_path / "clash-dir"
+        dest_dir.mkdir()
+        (dest_dir / "SKILL.md").write_text("# Existing\n", encoding="utf-8")
+
+        # Must exit on collision without force
+        with self.assertRaises(SystemExit) as ctx:
+            cli.main(["unpack", str(bundle_file), "-d", str(dest_dir)])
+        self.assertIn("Use --force", str(ctx.exception))
+        self.assertEqual((dest_dir / "SKILL.md").read_text(encoding="utf-8"), "# Existing\n")
+
+        # Must overwrite with --force
+        with patch("sys.stdout", new=io.StringIO()):
+            cli.main(["unpack", str(bundle_file), "-d", str(dest_dir), "--force"])
+        self.assertEqual((dest_dir / "SKILL.md").read_text(encoding="utf-8"), "# New\n")
+
+    @patch("bundium.cli.paste_from_clipboard", return_value="")
+    def test_unpack_clipboard_empty_exits(self, mock_paste):
+        with self.assertRaises(SystemExit) as ctx:
+            cli.main(["unpack", "-c"])
+        self.assertIn("Clipboard is empty", str(ctx.exception))
+
     def test_no_sys_exit_outside_cli(self):
         """Enforce architectural constraint: sys.exit is only permitted in cli.py."""
-        pkg_dir = Path(__file__).resolve().parent.parent / "src" / "skill_bundler"
+        pkg_dir = Path(__file__).resolve().parent.parent / "src" / "bundium"
         offenders = []
         for file_path in pkg_dir.glob("*.py"):
             if file_path.name == "cli.py":
