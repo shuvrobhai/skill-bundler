@@ -1,0 +1,32 @@
+{
+  "safety-gate": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.agents/hooks/safety-gate.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "format-guard": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "replace_file_content|write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.agents/hooks/format-guard.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

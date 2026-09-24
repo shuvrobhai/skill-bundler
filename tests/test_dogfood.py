@@ -8,7 +8,6 @@ from skill_bundler.bundler import build_bundle_document, collect_skill_files
 from skill_bundler.constants import (
     BINARY_NOTICE,
     COLLECTION_TITLE_PREFIX,
-    SKILL_MARKER_COMMENT,
     SKILL_MARKER_RELATIVE_PATH,
     SOURCE_COMMENT_PREFIX,
     SOURCE_COMMENT_SUFFIX,
@@ -25,7 +24,6 @@ class TestMarkerContract(unittest.TestCase):
         self.assertEqual(SOURCE_COMMENT_PREFIX, "<!-- SOURCE:")
         self.assertEqual(SOURCE_COMMENT_SUFFIX, "-->")
         self.assertEqual(SKILL_MARKER_RELATIVE_PATH, "SKILL.md")
-        self.assertEqual(SKILL_MARKER_COMMENT, "<!-- SOURCE: SKILL.md -->")
         self.assertEqual(BINARY_NOTICE, "_binary file — not inlined_")
         self.assertEqual(TITLE_PREFIX, "**Title:** One Page Version of ")
         self.assertEqual(COLLECTION_TITLE_PREFIX, "**Title:** Collection Bundle — ")

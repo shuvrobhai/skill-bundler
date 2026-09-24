@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-24
+
+### Removed
+- Removed dead `validate_output` post-hoc string checks from the pack builder; the builder already guarantees structural output
+- Removed unused `SKILL_MARKER_COMMENT` constant from the constants module
+- Removed redundant re-parse fallback in the collection document builder; entry body is used directly
+
 ## [0.2.0] - 2026-09-24
 
 ### Added

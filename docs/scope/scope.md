@@ -16,6 +16,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | C | Index a collection survey | Shipped | done |
 | D | Architecture and contract corrections | Shipped | done |
 | E | Release 0.2.0 closeout | Next | planned |
+| F | Contract hardening and parser fixes | Next | planned |
 
 ## Shipped
 

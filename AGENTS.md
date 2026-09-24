@@ -7,16 +7,24 @@
 - **Key dependencies**: none to run; `setuptools >= 61` to build
 - **Package manager**: pip, `src/` layout, installed editable
 
+## Build approach
+
+Tracer Bullet (each feature end to end through CLI plus logic, working).
+
 ## Commands
 
 ```bash
 # Install once (editable, provides the skill-bundler command)
 pip install -e .
 
+# Also works without install:
+python -m skill_bundler pack /path/to/skill
+
 # Pack: bare path defaults to pack (backward compat); -c/-t/-o are mutually exclusive
 skill-bundler pack <skill-dir>                  # clipboard (default)
 skill-bundler pack <skill-dir> -t               # stdout
 skill-bundler pack <skill-dir> -o [--force]     # writes <skill>.one-page.md next to skill dir; refuses to overwrite unless --force
+skill-bundler <skill-dir>                       # bare path also defaults to pack
 
 # Unpack: needs a source; destination defaults to ./<skill-title>/
 skill-bundler unpack <bundle.md> -d <dir>            # from file
@@ -73,3 +81,5 @@ Numbering is sequential per directory: check the highest existing file and add o
 - [.agents/rules/naming-style.md](.agents/rules/naming-style.md): code naming conventions and domain vocabulary guidelines
 - [.agents/rules/skills-policy.md](.agents/rules/skills-policy.md): skills documentation restrictions
 - [.agents/rules/ponytail.md](.agents/rules/ponytail.md): minimal-diff, stdlib-first implementation style
+- [src/skill_bundler/constants.py](src/skill_bundler/constants.py): centralized format tokens, markers, and probe sizes used by bundler and unpacker
+- [src/skill_bundler/frontmatter.py](src/skill_bundler/frontmatter.py): strict YAML frontmatter parsing and horizontal rule preservation

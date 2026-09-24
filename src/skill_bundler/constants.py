@@ -8,7 +8,6 @@ SOURCE_COMMENT_SUFFIX = "-->"
 SOURCE_PATTERN = re.compile(r"(?m)^<!-- SOURCE:\s*(.*?)\s*-->\r?$")
 
 SKILL_MARKER_RELATIVE_PATH = "SKILL.md"
-SKILL_MARKER_COMMENT = f"{SOURCE_COMMENT_PREFIX} {SKILL_MARKER_RELATIVE_PATH} {SOURCE_COMMENT_SUFFIX}"
 
 # Binary file handling
 BINARY_NOTICE = "_binary file — not inlined_"

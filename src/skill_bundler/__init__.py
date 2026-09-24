@@ -26,7 +26,7 @@ from skill_bundler.unpacker import (
 # Backwards compatibility alias
 directory_tree = build_structure_map
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "__version__",
     "ClipboardError",

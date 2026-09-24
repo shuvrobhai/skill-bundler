@@ -92,36 +92,6 @@ def _build_code_fence(content: str, lang: str) -> tuple[str, str]:
     return opening, backtick_fence
 
 
-def validate_output(
-    output_text: str,
-    skill_body: str,
-    files: list[Path],
-    skipped_files: list[str],
-    skill_dir: Path,
-) -> None:
-    """Validate that the bundle document satisfies structural integrity constraints."""
-    if "Skill's Structure Map" not in output_text:
-        raise ValueError("Validation failed: structure map is missing.")
-
-    if skill_body and skill_body.strip()[:200] not in output_text:
-        raise ValueError("Validation failed: SKILL.md body is missing from output.")
-
-    expected_skill_marker = f"{SOURCE_COMMENT_PREFIX} {SKILL_MARKER_RELATIVE_PATH} {SOURCE_COMMENT_SUFFIX}"
-    if expected_skill_marker not in output_text:
-        raise ValueError("Validation failed: SKILL.md source separator is missing.")
-
-    for path in files:
-        rel_posix = path.relative_to(skill_dir).as_posix()
-        expected_marker = f"{SOURCE_COMMENT_PREFIX} {rel_posix} {SOURCE_COMMENT_SUFFIX}"
-        if expected_marker not in output_text:
-            raise ValueError(f"Validation failed: missing source separator for {rel_posix}")
-
-    for skipped in skipped_files:
-        expected_marker = f"{SOURCE_COMMENT_PREFIX} {skipped} {SOURCE_COMMENT_SUFFIX}"
-        if expected_marker not in output_text:
-            raise ValueError(f"Validation failed: missing source separator for skipped file {skipped}")
-
-
 def build_bundle_document(
     skill_dir: Path, skill_md_path: Path, files: list[Path]
 ) -> tuple[str, int, list[str]]:
@@ -198,5 +168,4 @@ def build_bundle_document(
         inlined_count += 1
 
     document = "\n".join(lines)
-    validate_output(document, body, files, skipped_files, skill_dir)
     return document, inlined_count, skipped_files

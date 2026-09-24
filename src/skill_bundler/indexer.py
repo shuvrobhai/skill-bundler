@@ -109,14 +109,13 @@ def build_collection_document(
     lines.extend(["", "---", ""])
 
     for position, entry in enumerate(skills):
-        body = entry.body if entry.body else parse_skill(entry.skill_md)[2]
         lines.extend(
             [
                 f"{SOURCE_COMMENT_PREFIX} {entry.relative_path} {SOURCE_COMMENT_SUFFIX}",
                 "",
                 f"## {entry.name}",
                 "",
-                body.rstrip("\n"),
+                entry.body.rstrip("\n"),
                 "",
             ]
         )
