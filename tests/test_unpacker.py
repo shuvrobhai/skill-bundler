@@ -1,16 +1,19 @@
-"""Unit tests for the skill_bundler.unpacker module."""
+"""Unit tests for the bundium.unpacker module."""
 
 import tempfile
 import unittest
 from pathlib import Path
 
-from skill_bundler.bundler import build_bundle_document, collect_skill_files
-from skill_bundler.unpacker import (
+from bundium.bundler import build_bundle_document, collect_skill_files
+from bundium.unpacker import (
     UnpackError,
+    check_collisions,
     extract_skill_title,
     is_safe_relative_path,
     parse_bundle,
     unpack_bundle,
+    validate_paths,
+    write_files,
 )
 
 
@@ -119,12 +122,6 @@ class TestUnpacker(unittest.TestCase):
             self.skill_md.read_text(encoding="utf-8"),
         )
 
-        # Backwards compatibility check: force=True also works
-        unpacked_count_force, _ = unpack_bundle(
-            bundle_document, dest_dir, force=True
-        )
-        self.assertEqual(unpacked_count_force, 3)
-
     def test_reject_unsafe_path_traversal(self):
         """Unpack must reject bundles containing path traversal attempts."""
         malicious_bundle = (
@@ -143,6 +140,54 @@ class TestUnpacker(unittest.TestCase):
         with self.assertRaises(UnpackError) as ctx:
             unpack_bundle(invalid_text, dest_dir)
         self.assertIn("missing '<!-- SOURCE: SKILL.md -->'", str(ctx.exception))
+
+    def test_validate_paths_accepts_safe_paths(self):
+        target_dir = self.root_path / "safe-target"
+        target_dir.mkdir()
+        validate_paths({"valid/path/file.py": "content"}, target_dir)
+
+    def test_validate_paths_rejects_traversal(self):
+        target_dir = self.root_path / "safe-target"
+        target_dir.mkdir()
+        with self.assertRaises(UnpackError) as ctx:
+            validate_paths({"../outside.py": "content"}, target_dir)
+        self.assertIn("Security violation", str(ctx.exception))
+
+    def test_check_collisions_raises_without_overwrite(self):
+        target_dir = self.root_path / "collision-target"
+        target_dir.mkdir()
+        (target_dir / "existing.py").write_text("old", encoding="utf-8")
+        with self.assertRaises(UnpackError) as ctx:
+            check_collisions({"existing.py": "new"}, target_dir, should_overwrite=False)
+        self.assertIn("Use --force", str(ctx.exception))
+
+    def test_check_collisions_allows_overwrite(self):
+        target_dir = self.root_path / "collision-target"
+        target_dir.mkdir()
+        (target_dir / "existing.py").write_text("old", encoding="utf-8")
+        check_collisions({"existing.py": "new"}, target_dir, should_overwrite=True)
+
+    def test_write_files_creates_content(self):
+        target_dir = self.root_path / "write-target"
+        write_files({"new.py": "print('hello')\n"}, target_dir)
+        self.assertTrue((target_dir / "new.py").is_file())
+        self.assertEqual(
+            (target_dir / "new.py").read_text(encoding="utf-8"),
+            "print('hello')\n",
+        )
+
+    def test_write_files_adds_trailing_newline(self):
+        target_dir = self.root_path / "write-target"
+        write_files({"no_newline.py": "no newline"}, target_dir)
+        self.assertEqual(
+            (target_dir / "no_newline.py").read_text(encoding="utf-8"),
+            "no newline\n",
+        )
+
+    def test_write_files_creates_nested_directories(self):
+        target_dir = self.root_path / "write-target"
+        write_files({"deep/nested/file.py": "content"}, target_dir)
+        self.assertTrue((target_dir / "deep" / "nested" / "file.py").is_file())
 
 
 if __name__ == "__main__":

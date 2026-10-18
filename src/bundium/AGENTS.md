@@ -1,21 +1,23 @@
-# skill_bundler package
+# bundium package
 
 ## Overview
 
-This is the whole tool. It turns a skill directory into one Markdown bundle, and turns a bundle back into files on disk. `cli.py` only wires `argparse` to these modules, so all the real logic sits in `bundler.py`, `unpacker.py`, and `indexer.py`. Nothing here imports outside the standard library.
+This is the whole tool. It turns a skill directory into one Markdown bundle, and turns a bundle back into files on disk. `cli.py` only wires `argparse` to these modules, so all the real logic sits in `bundler.py`, `unpacker.py`, `indexer.py`, `bundle_format.py`, and `utils.py`. Nothing here imports outside the standard library.
 
 ## Key files
 
 | File | Owns |
 |---|---|
-| `constants.py` | Centralized format tokens, markers, title prefixes, regex patterns, and probe sizes |
+| `bundle_format.py` | Format contract: serialization, deserialization, all format constants, code fence helper |
+| `constants.py` | Deprecated: re-exports format constants from `bundle_format.py` |
 | `frontmatter.py` | Strict YAML frontmatter parsing, horizontal rule preservation, and multiline block folding |
-| `bundler.py` | Pack side: Structure Map tree, inlining text files, domain validation (consumed by indexer) |
-| `unpacker.py` | Unpack side: bundle parsing, path safety, collision guard, writing files to disk |
+| `bundler.py` | Pack side: file collection, Structure Map tree, delegates document assembly to `bundle_format.py` |
+| `unpacker.py` | Unpack side: discrete phases (`validate_paths`, `check_collisions`, `write_files`), delegates parsing to `bundle_format.py` |
 | `indexer.py` | Index side: skill discovery with recursive pruning, Skill Index table, Collection Bundle text |
+| `utils.py` | Deprecated: path exclusion inlined into `indexer.py` |
 | `cli.py` | The `argparse` parser, the `pack`, `unpack`, and `index` handlers, and every exit |
 | `clipboard.py` | The OS clipboard adapter: raises `ClipboardError` on failure (strictly no `sys.exit`) |
-| `__main__.py` | Module execution entry point for python -m skill_bundler |
+| `__main__.py` | Module execution entry point for python -m bundium |
 | `__init__.py` | The public surface, re-exported through `__all__` |
 
 ## Conventions
@@ -38,7 +40,9 @@ The bundle format is a contract between the two modules. `bundler.py` writes it 
 
 A Collection Bundle holds `SKILL.md` bodies only, and it never contains the exact `<!-- SOURCE: SKILL.md -->` marker, so `unpack` refuses it as input. A `SKILL.md` sitting directly in a Collection is never included, which keeps that marker out.
 
-Tests import `skill_bundler`, so run `pip install -e .` first, or prefix the command with `PYTHONPATH=src`.
+`bundle_format.py` owns all format tokens and the serialize/deserialize logic. `bundler.py` and `unpacker.py` delegate to it. `indexer.py` imports format constants from `bundle_format.py`. `utils.py` owns `is_excluded_path`, consumed by `bundler.py` and `indexer.py`.
+
+Tests import `bundium`, so run `uv sync` first (or prefix the command with `PYTHONPATH=src`).
 
 ## Related specs
 
@@ -47,7 +51,9 @@ Tests import `skill_bundler`, so run `pip install -e .` first, or prefix the com
 - `docs/adr/0003-strict-bundle-validation-and-safety.md`: validate everything before writing, and the path traversal guard
 - `docs/adr/0004-collection-bundle-contract.md`: the Collection Bundle contract, inlines SKILL.md only, and unpack rejection
 - `docs/adr/0005-bundle-delimiter-integrity-and-title-sanitization.md`: delimiter integrity, non destructive parsing, and title sanitization
+- `docs/adr/0006-delimiter-anchoring-without-structure-map.md`: delimiter anchoring without structure map reverse-parsing
 - `docs/specs/0001-index-command.md`: specification for bundling whole collections into a single document
 - `docs/specs/0002-architecture-and-contract-corrections.md`: contract hardening, centralized markers, and path traversal protections
+- `docs/specs/0003-audited-simplifications.md`: ponytail audit simplifications and over-engineering remediation
 
 _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._

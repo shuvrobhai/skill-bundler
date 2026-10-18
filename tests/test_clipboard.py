@@ -1,9 +1,9 @@
-"""Unit tests for the skill_bundler.clipboard module."""
+"""Unit tests for the bundium.clipboard module."""
 
 import unittest
 from unittest.mock import patch
 
-from skill_bundler.clipboard import (
+from bundium.clipboard import (
     ClipboardError,
     copy_to_clipboard,
     paste_from_clipboard,

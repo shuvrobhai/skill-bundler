@@ -1,5 +1,7 @@
 # 0005: Bundle Delimiter Integrity and Title Path Sanitization
 
+> **Status**: Decision 3 partially superseded by [ADR-0006](0006-delimiter-anchoring-without-structure-map.md). Decisions 1 and 2 remain active.
+
 Title sanitization and bundle file boundary extraction must prevent path traversal and delimiter collision. When unpacking without an explicit destination directory (`-d`), the destination defaults to `./<skill-title>/`, derived from `**Title:** One Page Version of <title>`. If `<title>` evaluates to `.` or `..`, sanitization that merely strips hyphens leaves relative traversal segments intact, escaping the working directory. Furthermore, splitting bundle contents via unanchored substring matching on `<!-- SOURCE: ... -->` and checking `_binary file — not inlined_` via broad substring containment causes self-referential markdown or documentation files to fragment or be dropped as binary files.
 
 ## Decision

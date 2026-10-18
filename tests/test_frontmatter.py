@@ -1,7 +1,7 @@
-"""Unit tests for the skill_bundler.frontmatter module."""
+"""Unit tests for the bundium.frontmatter module."""
 
 import unittest
-from skill_bundler.frontmatter import parse_skill_text
+from bundium.frontmatter import parse_skill_text
 
 
 class TestFrontmatter(unittest.TestCase):
@@ -96,6 +96,23 @@ class TestFrontmatter(unittest.TestCase):
             description,
             "Line 1 of description\nLine 2 of description",
         )
+        self.assertEqual(body, "# Body\n")
+
+    def test_nested_subkeys_do_not_overwrite_top_level_keys(self):
+        text = (
+            "---\n"
+            "name: primary-skill\n"
+            "author:\n"
+            "  name: nested-author-name\n"
+            "description: Primary skill description\n"
+            "metadata:\n"
+            "  description: nested metadata description\n"
+            "---\n\n"
+            "# Body\n"
+        )
+        name, description, body = parse_skill_text(text)
+        self.assertEqual(name, "primary-skill")
+        self.assertEqual(description, "Primary skill description")
         self.assertEqual(body, "# Body\n")
 
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Antigravity PreToolUse Safety Gate for skill-bundler
+# Antigravity PreToolUse Safety Gate for bundium
 set -e
 
 # Read stdin JSON payload via embedded python3

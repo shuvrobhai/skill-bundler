@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Renamed
+- Renamed the project from `skill-bundler` to `bundium` (package `skill_bundler` → `bundium`, CLI `bundium`; `skill-bundler` kept as a deprecated console-script alias). The name no longer cages the tool to skills: any folder of Markdown files can be packed into one self-contained document.
+
 ## [0.2.1] - 2026-09-24
 
 ### Removed

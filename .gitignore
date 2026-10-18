@@ -28,6 +28,8 @@ ENV/
 
 # Testing & Coverage
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -43,3 +45,19 @@ htmlcov/
 
 # Agent workspace data
 .workbuddy-ai/
+
+# Installed third-party agent skills (personal tooling state, see skills-policy.md).
+# First-party config (.agents/agents/, .agents/rules/, .agents/hooks/) IS tracked.
+.agents/skills/
+skills-lock.json
+
+# Kilo plan archive (internal scratch, not project docs)
+.kilo/
+
+# Secrets (future-proof; none exist today)
+.env
+.env.*
+
+# Lock file: zero runtime dependencies, so uv.lock pins nothing.
+# Library convention (github/gitignore) leaves it untracked.
+uv.lock

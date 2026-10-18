@@ -1,16 +1,15 @@
-"""Unit tests for the skill_bundler.bundler module."""
+"""Unit tests for the bundium.bundler module."""
 
 import tempfile
 import unittest
 from pathlib import Path
 
-from skill_bundler.bundler import (
+from bundium.bundler import (
     build_bundle_document,
     build_structure_map,
     collect_skill_files,
-    directory_tree,
-    parse_skill,
 )
+from bundium.frontmatter import parse_skill
 
 
 class TestBundler(unittest.TestCase):
@@ -72,6 +71,19 @@ class TestBundler(unittest.TestCase):
         self.assertNotIn(".hidden", file_names)
         self.assertNotIn("cache.pyc", file_names)
 
+    def test_collect_skill_files_preserves_nested_skill_md(self):
+        # Create a nested directory with a template SKILL.md
+        templates_dir = self.skill_dir / "templates" / "sub"
+        templates_dir.mkdir(parents=True)
+        nested_skill = templates_dir / "SKILL.md"
+        nested_skill.write_text("# Nested Template\n", encoding="utf-8")
+
+        files = collect_skill_files(self.skill_dir)
+        relative_paths = [p.relative_to(self.skill_dir).as_posix() for p in files]
+
+        self.assertIn("templates/sub/SKILL.md", relative_paths)
+        self.assertNotIn("SKILL.md", relative_paths)
+
     def test_build_structure_map(self):
         structure_map = build_structure_map(self.skill_dir)
         self.assertIn("my-test-skill", structure_map)
@@ -80,9 +92,6 @@ class TestBundler(unittest.TestCase):
         self.assertIn("helper.py", structure_map)
         self.assertIn("config", structure_map)
         self.assertIn("settings.yaml", structure_map)
-
-    def test_directory_tree_alias(self):
-        self.assertIs(directory_tree, build_structure_map)
 
     def test_build_bundle_document(self):
         files = collect_skill_files(self.skill_dir)

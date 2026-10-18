@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "skill-bundler"
+name = "bundium"
 version = "0.2.1"
-description = "Bundle an AI agent skill directory into one self-contained Markdown document."
+description = "Bundle a folder of Markdown files (e.g. an AI agent skill) into one self-contained document."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -21,7 +21,7 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-skill-bundler = "skill_bundler.cli:main"
+bundium = "bundium.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

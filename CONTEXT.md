@@ -1,6 +1,6 @@
-# Skill Bundler
+# Bundium
 
-A tool that packages an AI agent skill directory into a single, self-contained Markdown document for easy sharing and pasting into LLM sessions.
+A tool that packages a folder of Markdown files (e.g. an AI agent skill) into a single, self-contained document for easy sharing and pasting into LLM sessions.
 
 ## Language
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Antigravity PostToolUse Formatter and Round-Trip Contract Guard for skill-bundler
+# Antigravity PostToolUse Formatter and Round-Trip Contract Guard for bundium
 set -e
 
 # Extract TargetFile from stdin JSON
@@ -27,7 +27,7 @@ if [ -n "$TARGET_FILE" ] && [ -f "$TARGET_FILE" ]; then
 
       # 2. Skill-bundler format net: if bundler.py or unpacker.py was touched, verify contract test
       case "$TARGET_FILE" in
-        *bundler.py|*unpacker.py)
+        *bundler.py|*unpacker.py|*bundle_format.py)
           PYTHONPATH=src python3 -m unittest tests.test_unpacker.TestUnpacker.test_round_trip_pack_and_unpack >/dev/null 2>&1 || true
           ;;
       esac

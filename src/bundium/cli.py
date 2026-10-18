@@ -1,22 +1,21 @@
-"""Command-line interface for skill-bundler (pack and unpack subcommands)."""
+"""Command-line interface for bundium (pack and unpack subcommands)."""
 
 import argparse
 import sys
 from pathlib import Path
 
-from skill_bundler import __version__
-from skill_bundler.bundler import (
+from bundium import __version__
+from bundium.bundler import (
     build_bundle_document,
     collect_skill_files,
-    parse_skill,
 )
-from skill_bundler.clipboard import (
+from bundium.clipboard import (
     ClipboardError,
     copy_to_clipboard,
     paste_from_clipboard,
 )
-from skill_bundler.indexer import build_collection_document, discover_skills
-from skill_bundler.unpacker import (
+from bundium.indexer import build_collection_document, discover_skills
+from bundium.unpacker import (
     UnpackError,
     extract_skill_title,
     unpack_bundle,
@@ -161,10 +160,38 @@ def _handle_index(args: argparse.Namespace) -> None:
     )
 
 
+def _add_delivery_arguments(parser: argparse.ArgumentParser, output_help: str) -> None:
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite existing output file when using -o",
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-c",
+        "--clipboard",
+        action="store_true",
+        help="Copy to clipboard (default)",
+    )
+    group.add_argument(
+        "-t",
+        "--terminal",
+        action="store_true",
+        help="Print to terminal (stdout)",
+    )
+    group.add_argument(
+        "-o",
+        "--output",
+        action="store_true",
+        help=output_help,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="skill-bundler",
-        description="Bundle an AI agent skill directory into Markdown, or unpack a bundle back into files.",
+        prog="bundium",
+        description="Bundle a folder of Markdown files (e.g. an AI agent skill) into one document, or unpack a bundle back into files.",
     )
     parser.add_argument(
         "-v",
@@ -184,31 +211,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Path to the skill directory containing SKILL.md",
     )
-    pack_parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="Overwrite existing output file when using -o",
-    )
-    pack_group = pack_parser.add_mutually_exclusive_group()
-    pack_group.add_argument(
-        "-c",
-        "--clipboard",
-        action="store_true",
-        help="Copy to clipboard (default)",
-    )
-    pack_group.add_argument(
-        "-t",
-        "--terminal",
-        action="store_true",
-        help="Print to terminal (stdout)",
-    )
-    pack_group.add_argument(
-        "-o",
-        "--output",
-        action="store_true",
-        help="Write to <skill>.one-page.md file",
-    )
+    _add_delivery_arguments(pack_parser, "Write to <skill>.one-page.md file")
 
     # 'unpack' subcommand
     unpack_parser = subparsers.add_parser(
@@ -258,31 +261,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Include skills nested below immediate children",
     )
-    index_parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="Overwrite existing output file when using -o",
-    )
-    index_group = index_parser.add_mutually_exclusive_group()
-    index_group.add_argument(
-        "-c",
-        "--clipboard",
-        action="store_true",
-        help="Copy to clipboard (default)",
-    )
-    index_group.add_argument(
-        "-t",
-        "--terminal",
-        action="store_true",
-        help="Print to terminal (stdout)",
-    )
-    index_group.add_argument(
-        "-o",
-        "--output",
-        action="store_true",
-        help="Write to <collection>.one-page.md file",
-    )
+    _add_delivery_arguments(index_parser, "Write to <collection>.one-page.md file")
 
     return parser
 

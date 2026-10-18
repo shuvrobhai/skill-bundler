@@ -1,11 +1,11 @@
-"""Unit tests for the skill_bundler.indexer module."""
+"""Unit tests for the bundium.indexer module."""
 
 import tempfile
 import unittest
 from pathlib import Path
 
-from skill_bundler import cli
-from skill_bundler.indexer import build_collection_document, discover_skills
+from bundium import cli
+from bundium.indexer import build_collection_document, discover_skills
 
 
 def _write_skill(parent: Path, dirname: str, name=None, description=None, body=None):
@@ -122,11 +122,12 @@ class TestIndexer(unittest.TestCase):
         default_skills, _s1 = discover_skills(self.collection_dir)
         self.assertEqual(default_skills, [])
 
-        recursive_skills, _s2 = discover_skills(self.collection_dir, True)
+        recursive_skills, s2 = discover_skills(self.collection_dir, True)
         self.assertEqual([entry.name for entry in recursive_skills], ["nested"])
         self.assertEqual(
             recursive_skills[0].relative_path, "group/nested/SKILL.md"
         )
+        self.assertEqual(s2, [])
 
     def test_hidden_and_cache_dirs_are_silently_skipped(self):
         _write_skill(self.collection_dir / ".secret", "ghost", "ghost", "Hidden")
@@ -162,6 +163,18 @@ class TestIndexer(unittest.TestCase):
         self.assertNotIn("complex/scripts", skipped)
         self.assertNotIn("complex/templates", skipped)
         self.assertEqual(skipped, [])
+
+    def test_recursive_discovery_does_not_skip_parent_category_folders(self):
+        # Create category with two child skills
+        _write_skill(self.collection_dir / "category", "skill_a", "skill_a", "First")
+        _write_skill(self.collection_dir / "category", "skill_b", "skill_b", "Second")
+        # Create an actually empty non-skill directory
+        (self.collection_dir / "unrelated_empty").mkdir()
+
+        skills, skipped = discover_skills(self.collection_dir, should_recursive=True)
+        self.assertEqual(len(skills), 2)
+        self.assertNotIn("category", skipped)
+        self.assertEqual(skipped, ["unrelated_empty"])
 
 
 if __name__ == "__main__":

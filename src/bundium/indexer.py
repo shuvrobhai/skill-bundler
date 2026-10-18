@@ -3,13 +3,12 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from skill_bundler.bundler import is_excluded_path
-from skill_bundler.constants import (
+from bundium.bundle_format import (
     COLLECTION_TITLE_PREFIX,
     SOURCE_COMMENT_PREFIX,
     SOURCE_COMMENT_SUFFIX,
 )
-from skill_bundler.frontmatter import parse_skill
+from bundium.frontmatter import parse_skill
 
 DESCRIPTION_LIMIT = 80
 
@@ -63,17 +62,22 @@ def discover_skills(
         for child in children:
             if not child.is_dir() or child.is_symlink():
                 continue
-            relative = child.relative_to(collection_dir)
-            if is_excluded_path(relative):
+            if child.name.startswith(".") or child.name == "__pycache__":
                 continue
+            relative = child.relative_to(collection_dir)
             skill_md = child / "SKILL.md"
             if skill_md.is_file():
                 skills.append(_read_entry(collection_dir, skill_md))
                 # Prune: do not traverse into internal subdirectories of a discovered skill
             else:
-                skipped.append(relative.as_posix())
                 if should_recursive:
+                    count_before = len(skills)
                     _explore(child)
+                    if len(skills) == count_before:
+                        # No skills discovered in this subtree; mark as skipped
+                        skipped.append(relative.as_posix())
+                else:
+                    skipped.append(relative.as_posix())
 
     _explore(collection_dir)
     skills.sort(key=lambda entry: entry.name.lower())

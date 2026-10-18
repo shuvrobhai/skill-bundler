@@ -1,11 +1,11 @@
-# skill-bundler
+# Bundium
 
 ## Stack
 
 - **Language / Runtime**: Python 3.9+, standard library only, zero runtime dependencies
 - **Framework**: none. `argparse` subcommand CLI
 - **Key dependencies**: none to run; `setuptools >= 61` to build
-- **Package manager**: pip, `src/` layout, installed editable
+- **Package manager**: uv (`uv sync`, `uv run`), `src/` layout; fallback `pip install -e .`
 
 ## Build approach
 
@@ -14,32 +14,34 @@ Tracer Bullet (each feature end to end through CLI plus logic, working).
 ## Commands
 
 ```bash
-# Install once (editable, provides the skill-bundler command)
+# Install once (editable env, provides the bundium command)
+uv sync
+# Fallback without uv:
 pip install -e .
 
 # Also works without install:
-python -m skill_bundler pack /path/to/skill
+uv run python -m bundium pack /path/to/skill
 
 # Pack: bare path defaults to pack (backward compat); -c/-t/-o are mutually exclusive
-skill-bundler pack <skill-dir>                  # clipboard (default)
-skill-bundler pack <skill-dir> -t               # stdout
-skill-bundler pack <skill-dir> -o [--force]     # writes <skill>.one-page.md next to skill dir; refuses to overwrite unless --force
-skill-bundler <skill-dir>                       # bare path also defaults to pack
+bundium pack <skill-dir>                  # clipboard (default)
+bundium pack <skill-dir> -t               # stdout
+bundium pack <skill-dir> -o [--force]     # writes <skill>.one-page.md next to skill dir; refuses to overwrite unless --force
+bundium <skill-dir>                       # bare path also defaults to pack
 
 # Unpack: needs a source; destination defaults to ./<skill-title>/
-skill-bundler unpack <bundle.md> -d <dir>            # from file
-skill-bundler unpack -c -d <dir>                     # from clipboard
-skill-bundler unpack <bundle.md> -d <dir> --force    # only way to overwrite
+bundium unpack <bundle.md> -d <dir>            # from file
+bundium unpack -c -d <dir>                     # from clipboard
+bundium unpack <bundle.md> -d <dir> --force    # only way to overwrite
 
 # Index: survey a whole Collection (Delivery Target flags mirror pack)
-skill-bundler index <collection-dir> -t              # stdout (clipboard is default, -o writes file)
-skill-bundler index <collection-dir> -r -t           # include nested skills
-skill-bundler index <collection-dir> -o [--force]    # writes <collection>.one-page.md; refuses to overwrite unless --force
+bundium index <collection-dir> -t              # stdout (clipboard is default, -o writes file)
+bundium index <collection-dir> -r -t           # include nested skills
+bundium index <collection-dir> -o [--force]    # writes <collection>.one-page.md; refuses to overwrite unless --force
 
-# Test (install first, or prefix with PYTHONPATH=src; use python3 on macOS)
-PYTHONPATH=src python3 -m unittest discover -s tests
-PYTHONPATH=src python3 -m unittest tests.test_bundler -v        # one module
-PYTHONPATH=src python3 -m unittest tests.test_unpacker.TestUnpacker.<test> -v  # one test
+# Test (uv sync first; use uv run on macOS)
+uv run python -m unittest discover -s tests
+uv run python -m unittest tests.test_bundler -v        # one module
+uv run python -m unittest tests.test_unpacker.TestUnpacker.<test> -v  # one test
 ```
 
 ## Notes
@@ -77,9 +79,9 @@ Numbering is sequential per directory: check the highest existing file and add o
 
 ## Context files
 
-- [src/skill_bundler/AGENTS.md](src/skill_bundler/AGENTS.md): package internals and the bundle format contract
+- [src/bundium/AGENTS.md](src/bundium/AGENTS.md): package internals and the bundle format contract
 - [.agents/rules/naming-style.md](.agents/rules/naming-style.md): code naming conventions and domain vocabulary guidelines
 - [.agents/rules/skills-policy.md](.agents/rules/skills-policy.md): skills documentation restrictions
 - [.agents/rules/ponytail.md](.agents/rules/ponytail.md): minimal-diff, stdlib-first implementation style
-- [src/skill_bundler/constants.py](src/skill_bundler/constants.py): centralized format tokens, markers, and probe sizes used by bundler and unpacker
-- [src/skill_bundler/frontmatter.py](src/skill_bundler/frontmatter.py): strict YAML frontmatter parsing and horizontal rule preservation
+- [src/bundium/constants.py](src/bundium/constants.py): centralized format tokens, markers, and probe sizes used by bundler and unpacker
+- [src/bundium/frontmatter.py](src/bundium/frontmatter.py): strict YAML frontmatter parsing and horizontal rule preservation

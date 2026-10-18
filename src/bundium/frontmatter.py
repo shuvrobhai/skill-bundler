@@ -38,12 +38,15 @@ def parse_skill_text(text: str) -> Tuple[str, str, str]:
     idx = 0
     while idx < len(frontmatter_lines):
         line = frontmatter_lines[idx].rstrip("\r\n")
+
+        # Top-level keys must not be indented
+        is_top_level = bool(line) and not line.startswith((" ", "\t"))
         stripped = line.strip()
 
-        if stripped.startswith("name:"):
+        if is_top_level and stripped.startswith("name:"):
             name = stripped.split(":", 1)[1].strip().strip("\"'")
             idx += 1
-        elif stripped.startswith("description:"):
+        elif is_top_level and stripped.startswith("description:"):
             raw_val = stripped.split(":", 1)[1].strip()
             if raw_val in (">", ">-", ">+", "|", "|-", "|+"):
                 is_folded = raw_val.startswith(">")

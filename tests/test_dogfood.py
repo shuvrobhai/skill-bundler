@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from skill_bundler.bundler import build_bundle_document, collect_skill_files
-from skill_bundler.constants import (
+from bundium.bundler import build_bundle_document, collect_skill_files
+from bundium.bundle_format import (
     BINARY_NOTICE,
     COLLECTION_TITLE_PREFIX,
     SKILL_MARKER_RELATIVE_PATH,
@@ -14,7 +14,7 @@ from skill_bundler.constants import (
     SOURCE_PATTERN,
     TITLE_PREFIX,
 )
-from skill_bundler.unpacker import parse_bundle, unpack_bundle
+from bundium.unpacker import parse_bundle, unpack_bundle
 
 
 class TestMarkerContract(unittest.TestCase):

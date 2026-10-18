@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.agents/hooks/safety-gate.sh",
+            "command": "./hooks/safety-gate.sh",
             "timeout": 15
           }
         ]
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.agents/hooks/format-guard.sh",
+            "command": "./hooks/format-guard.sh",
             "timeout": 30
           }
         ]
